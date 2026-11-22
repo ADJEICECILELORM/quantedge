@@ -15,7 +15,9 @@ class LabelGenerator:
         current_close = df['close']
         price_change = future_close - current_close
         df['target'] = np.where(price_change > threshold, 1, 0)
+        df.loc[future_close.isna() | price_change.isna(), 'target'] = np.nan
         df.dropna(subset=['target'], inplace=True)
+        df['target'] = df['target'].astype(int)
         return df
 
     def print_stats(self, df):
