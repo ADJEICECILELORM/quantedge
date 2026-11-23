@@ -29,7 +29,8 @@ def retrain_models(symbol: str = "EURUSD",
                   bars: int = 10000,
                   optimize_hyperparameters: bool = False,
                   walk_forward_validation: bool = True,
-                  auto_deploy: bool = True):
+                  auto_deploy: bool = True,
+                  challenger: bool = False):
     """
     Complete retraining pipeline.
 
@@ -124,8 +125,9 @@ def retrain_models(symbol: str = "EURUSD",
         print("\n[4/7] SKIPPING WALK-FORWARD VALIDATION")
 
     # ========== Step 5: Train Models ==========
-    print("\n[5/7] TRAINING MODELS...")
-    trainer = AdvancedModelTrainer(df)
+    model_dir = "models/challenger" if challenger else "models/saved"
+    print(f"\n[5/7] TRAINING MODELS (target: {model_dir})...")
+    trainer = AdvancedModelTrainer(df, model_dir=model_dir)
     performance = trainer.train_models(optimize=optimize_hyperparameters)
 
     # ========== Step 6: Optimize Ensemble Weights ==========
@@ -134,6 +136,17 @@ def retrain_models(symbol: str = "EURUSD",
     ensemble_weights = trainer.optimize_ensemble_weights(X_test, y_test)
 
     # ========== Step 7: Compare & Deploy ==========
+    if challenger:
+        from models.championship import should_promote
+        print("\n[7/7] CHALLENGER MODE - champion is untouched")
+        trainer.save_models(with_backup=False)
+        promote, details = should_promote()
+        print(f"   Promotion decision: {'PROMOTE' if promote else 'KEEP CHAMPION'}")
+        print(f"   {details['reason']}")
+        print("\n   To promote manually: "
+              "from models.championship import promote_challenger; promote_challenger()")
+        return True
+
     print("\n[7/7] COMPARING WITH EXISTING MODELS...")
     is_better = trainer.compare_with_existing_models(X_test, y_test)
 
@@ -186,6 +199,10 @@ def main():
                        help='Skip walk-forward validation')
     parser.add_argument('--no-deploy', action='store_true',
                        help='Do not auto-deploy even if better')
+    parser.add_argument('--challenger', action='store_true',
+                       help='Treat the new models as a challenger: train into '
+                            'models/challenger and evaluate promotion rule; the '
+                            'champion in models/saved stays untouched')
 
     args = parser.parse_args()
 
@@ -194,7 +211,8 @@ def main():
         bars=args.bars,
         optimize_hyperparameters=args.optimize,
         walk_forward_validation=not args.no_validation,
-        auto_deploy=not args.no_deploy
+        auto_deploy=not args.no_deploy,
+        challenger=args.challenger
     )
 
     if success:

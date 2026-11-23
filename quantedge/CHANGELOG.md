@@ -1,6 +1,18 @@
 # Changelog
 
 ## 2.0 - 2026-11
+- Champion/challenger model governance (`models/championship.py`):
+  `retrain_models.py --challenger` trains into `models/challenger`;
+  promotion requires a >=0.02 walk-forward `roc_auc` gain with guarded
+  metrics; every promotion backs the champion up for rollback
+- Daily risk report (`utils/risk_report.py`): markdown P&L attribution
+  by symbol/regime/hour from the trade journal, empirical VaR 95%,
+  daily-loss gate headroom, active-limit listing; CLI
+  `python utils/risk_report.py`
+- Multi-symbol portfolio backtest (`backtest/portfolio_backtest.py`):
+  combined equity on a shared calendar, portfolio metrics, correlation
+  gate vs `risk.max_correlation`, peak concurrent gross-exposure check,
+  and Monte Carlo robustness on combined trades
 - Statistical validation (`backtest/validation.py`): Monte Carlo
   bootstrap of the trade sequence (max-drawdown distribution, P(ruin),
   P(profit)), Probabilistic Sharpe Ratio and Deflated Sharpe Ratio

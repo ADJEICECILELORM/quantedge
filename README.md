@@ -40,6 +40,29 @@ python run_backtest.py --mt5 --symbol EURUSD --start 2024-01-01 --end 2025-01-01
 ```
 Always retrain first (`python retrain_models.py`) so `models/saved/metadata.json` exists — inference validates live feature columns against training metadata and refuses to predict on mismatched feature sets.
 
+Every backtest also prints a robustness report: Monte Carlo bootstrap of the trade sequence (max-drawdown distribution, P(ruin), P(profit)) plus the Probabilistic Sharpe Ratio with a `real edge` / `NOT distinguishable from luck` verdict.
+
+### Portfolio backtest (multi-symbol)
+
+```python
+from backtest.portfolio_backtest import PortfolioBacktest, format_portfolio_report
+from backtest.data_loader import load_csv_history
+
+result = PortfolioBacktest(
+    {"EURUSD": load_csv_history("data/EURUSD_M5.csv"),
+     "GBPUSD": load_csv_history("data/GBPUSD_M5.csv")},
+).run()
+print(format_portfolio_report(result))
+```
+Prints per-symbol and combined metrics, flags correlation-gate violations and peak concurrent gross exposure vs the configured caps.
+
+## Model governance (champion/challenger)
+
+```bash
+python retrain_models.py --challenger   # trains into models/challenger, champion untouched
+```
+The promotion rule: challenger walk-forward `roc_auc` must beat the champion by ≥0.02 without regressing accuracy/precision/recall. Promote explicitly with `from models.championship import promote_challenger; promote_challenger()` — this backs up the champion first for rollback.
+
 ## Running
 
 ```bash
@@ -55,6 +78,15 @@ python bot.py --balance 5000  # override balance (default: config)
 cd quantedge
 pytest
 ```
+
+## Daily risk report
+
+```bash
+cd quantedge
+python utils/risk_report.py                 # reads data/journal.db, prints markdown
+python utils/risk_report.py --journal data/journal.db
+```
+P&L attribution by symbol/regime/hour, empirical VaR from realized trade PnL, daily-loss gate headroom, active risk limits.
 
 ## Note
 
