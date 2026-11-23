@@ -75,7 +75,7 @@ class AdvancedModelTrainer:
 
         return X_train_scaled, X_test_scaled, y_train, y_test, feature_cols
 
-    def walk_forward_validation(self, n_splits: int = 5) -> Dict:
+    def walk_forward_validation(self, n_splits: int = 5, gap: int = 5) -> Dict:
         """
         Perform walk-forward validation (time-series cross-validation).
 
@@ -88,8 +88,9 @@ class AdvancedModelTrainer:
 
         X, _, y, _, feature_cols = self.prepare_data()
 
-        # Time series split
-        tscv = TimeSeriesSplit(n_splits=n_splits)
+        # Time series split. gap bars are purged between train and test so
+        # labels computed over forward_bars cannot leak across the boundary.
+        tscv = TimeSeriesSplit(n_splits=n_splits, gap=gap)
 
         validation_scores = {
             'rf': [],
@@ -134,7 +135,7 @@ class AdvancedModelTrainer:
 
         return validation_scores
 
-    def optimize_hyperparameters(self, X_train, y_train, model_type: str = 'xgb'):
+    def optimize_hyperparameters(self, X_train, y_train, model_type: str = 'xgb', gap: int = 5):
         """
         Optimize hyperparameters using GridSearchCV.
         """
@@ -167,7 +168,7 @@ class AdvancedModelTrainer:
             model = LogisticRegression(max_iter=1000, n_jobs=-1)
 
         # Grid search with time series CV
-        tscv = TimeSeriesSplit(n_splits=3)
+        tscv = TimeSeriesSplit(n_splits=3, gap=gap)
         grid_search = GridSearchCV(model, param_grid, cv=tscv, scoring='accuracy',
                                    n_jobs=-1, verbose=1)
 

@@ -120,7 +120,7 @@ class BacktestEngine:
         for i in range(self.warmup_bars, n - 1):
             bar = features.iloc[i]
             next_bar = features.iloc[i + 1]
-            equity_curve[i] = equity
+            equity_curve[i] = equity + self._unrealized_pnl(open_trade, i, bar)
 
             if open_trade is not None:
                 exited, exit_price, exit_kind = self._check_exit(open_trade, bar)
@@ -202,6 +202,13 @@ class BacktestEngine:
         if high >= trade.take_profit:
             return True, trade.take_profit, "tp"
         return False, None, ""
+
+    @staticmethod
+    def _unrealized_pnl(trade: Optional[Trade], bar_index: int, bar) -> float:
+        if trade is None or bar_index < trade.entry_bar:
+            return 0.0
+        close = float(bar["close"])
+        return float(trade.units * (close - trade.entry_price))
 
     def _pnl(self, trade: Trade) -> float:
         if trade.exit_price is None:

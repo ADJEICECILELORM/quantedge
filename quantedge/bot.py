@@ -145,6 +145,9 @@ class QuantEdgeV6:
         )
 
         # === V6 RAG INTELLIGENCE ===
+        self.rag_enabled = bool(self.config.get('rag', {}).get('enabled', False))
+        if not self.rag_enabled:
+            print('RAG intelligence DISABLED by config (mock news sources)')
         print("\n🧠 Loading V6 RAG Intelligence...")
         self.news_orchestrator = NewsIngestionOrchestrator()
         self.source_scorer = SourceScoringEngine()
@@ -254,6 +257,8 @@ class QuantEdgeV6:
 
     def refresh_news(self):
         """Fetch and process recent news events"""
+        if not getattr(self, 'rag_enabled', False):
+            return
         try:
             # Fetch news from last 60 minutes
             raw_events = self.news_orchestrator.fetch_news(minutes=60)
@@ -280,6 +285,9 @@ class QuantEdgeV6:
 
         Returns structured news features (NO hallucination).
         """
+        if not getattr(self, 'rag_enabled', False):
+            return None
+
         if not symbol or not isinstance(symbol, str):
             logger.warning(f"Invalid symbol provided: {symbol}")
             return None
@@ -609,6 +617,16 @@ class QuantEdgeV6:
                 )
 
                 self.shadow_logger.log_proposed_trade(proposed_trade)
+                self.journal.log_trade(
+                    symbol=symbol,
+                    direction=signal,
+                    mode='shadow',
+                    entry_price=current_price,
+                    lot_size=lot_size,
+                    position_size_usd=position_size_usd,
+                    regime=analysis['regime'].regime_type,
+                    news_driven=analysis['news_features'] is not None,
+                )
 
                 # Track in correlation filter even in shadow mode
                 self.correlation.add_position(symbol, signal)
@@ -632,6 +650,17 @@ class QuantEdgeV6:
                 if result['success']:
                     self.trades_today += 1
                     self.risk_gates.increment_open_trades()
+                    self.journal.log_trade(
+                        symbol=symbol,
+                        direction=signal,
+                        mode='live',
+                        entry_price=current_price,
+                        lot_size=lot_size,
+                        position_size_usd=position_size_usd,
+                        regime=analysis['regime'].regime_type,
+                        news_driven=analysis['news_features'] is not None,
+                        reason=str(result.get('ticket')),
+                    )
 
                     # Track in correlation filter
                     self.correlation.add_position(symbol, signal)
@@ -670,14 +699,21 @@ class QuantEdgeV6:
                 print(f"📊 CYCLE #{cycle} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                 print(f"{'='*60}")
 
-                # Check kill switch
-                current_balance = self.account_balance
+                # Check kill switch with LIVE equity, not a startup snapshot
+                live_account = mt5.account_info()
+                current_balance = live_account.equity if live_account else self.account_balance
                 kill_switch = self.risk_gates.check_kill_switch(current_balance)
                 if kill_switch['triggered']:
                     print(f"\n🔴 KILL SWITCH TRIGGERED!")
                     print(f"   {kill_switch['reason']}")
                     print(f"   Daily Loss: {kill_switch['daily_loss_pct']:.2f}%")
                     break
+
+                # Session filter
+                if not self.time_machine.is_trading_allowed(datetime.now(timezone.utc)):
+                    print("\n\U0001f4a4 Outside trading session (config) - waiting 5 minutes...")
+                    time.sleep(300)
+                    continue
 
                 # Refresh news every 10 cycles (~5 minutes)
                 if cycle % 10 == 1:

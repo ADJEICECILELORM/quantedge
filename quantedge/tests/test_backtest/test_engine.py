@@ -93,3 +93,42 @@ class TestBacktestEngine:
         curve = result.equity_curve
         assert not curve.iloc[: config["backtest"]["warmup_bars"]].isna().any()
         assert not curve.isna().any()
+
+
+class TestMarkToMarket:
+    def test_unrealized_pnl_marks_open_position(self, config):
+        from backtest.engine import Trade
+
+        engine = BacktestEngine(make_data(), symbol="TEST", config=config, inference=BuyEveryBar())
+        trade = Trade(
+            entry_bar=5, exit_bar=None, entry_price=100.0, exit_price=None,
+            direction=1, stop_loss=99.0, take_profit=101.0, units=10.0,
+        )
+        bar = pd.Series({"close": 101.0})
+
+        assert engine._unrealized_pnl(trade, 5, bar) == pytest.approx(10.0)
+        assert engine._unrealized_pnl(trade, 4, bar) == 0.0
+        assert engine._unrealized_pnl(None, 5, bar) == 0.0
+        assert engine._unrealized_pnl(trade, 5, pd.Series({"close": 99.5})) == pytest.approx(-5.0)
+
+    def test_equity_curve_reflects_open_position(self, config):
+        data = make_data(n=400, seed=23)
+        engine = BacktestEngine(data, symbol="TEST", config=config, inference=BuyEveryBar())
+        result = engine.run()
+
+        trades = result.trades
+        if len(trades) == 0:
+            pytest.skip("no trades generated")
+        long_trade = trades[trades["exit_bar"] - trades["entry_bar"] > 1]
+        if len(long_trade) == 0:
+            pytest.skip("no multi-bar trades generated")
+
+        curve = result.equity_curve.reset_index(drop=True)
+        trade = long_trade.iloc[0]
+        mid_bars = list(range(int(trade["entry_bar"]) + 1, int(trade["exit_bar"])))
+        if not mid_bars:
+            pytest.skip("no bars between entry and exit")
+        values = curve.iloc[mid_bars].values
+        assert not np.allclose(values, values[0]), (
+            "equity curve is flat while a position is open - mark-to-market missing"
+        )

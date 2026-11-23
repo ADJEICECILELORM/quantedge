@@ -1,3 +1,29 @@
+# Changelog
+
+## 2.0 - 2026-11
+
+- Tag: label-corruption fix (`features/label_generator.py`): the last
+  `forward_bars` rows were silently labeled 0 instead of dropped; all
+  existing PKL models must be retrained
+- Backtest engine (`backtest/` + `run_backtest.py`): bar-by-bar replay of
+  the live feature/inference/sizing code path with spread, slippage,
+  commission, next-open entries, mark-to-market equity and risk metrics
+- Config system (`config.json` + `utils/config.py`); `bot.py` is the only
+  entry point (was bot.py/bot_ultimate/v4/v5/v6)
+- Model registry (`models/registry.py`): `metadata.json` per artifact
+  (feature columns, data range, hyperparams, metrics); inference refuses
+  mismatched feature sets
+- Safety: immutable risk-gate limits, live-equity kill switch and sizing
+  sync, real session filter (`time_machine.py`, default 07:00-17:00 UTC)
+- RAG news layer gated behind `rag.enabled` (default off) until a real
+  source replaces the mock events
+- SQLite trade journal (`utils/trade_journal.py`)
+- Walk-forward validation purges `gap` bars between train/test
+- CI: GitHub Actions (pytest + backtest smoke), leakage detector and
+  causality tests; removed version-sprawl docs and one-off scripts
+
+---
+
 # QuantEdge - Changelog
 
 ## Version 4.0.0 - Ultimate Release (2026-01-23)

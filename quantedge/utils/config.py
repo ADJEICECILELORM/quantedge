@@ -20,6 +20,9 @@ DEFAULTS = {
         "max_correlation": 0.7,
         "max_lot": 1.0,
     },
+    "rag": {
+        "enabled": False,
+    },
     "sessions": {
         "allowed_utc_ranges": [[7, 17]],
     },
