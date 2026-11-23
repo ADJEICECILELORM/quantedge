@@ -250,6 +250,7 @@ class AdvancedModelTrainer:
         """
         y_pred = model.predict(X_test)
         y_proba = model.predict_proba(X_test)
+        y_score = y_proba[:, 1] if y_proba.ndim == 2 and y_proba.shape[1] == 2 else y_proba
 
         # Calculate metrics
         metrics = {
@@ -257,7 +258,7 @@ class AdvancedModelTrainer:
             'precision': precision_score(y_test, y_pred, average='weighted', zero_division=0),
             'recall': recall_score(y_test, y_pred, average='weighted', zero_division=0),
             'f1': f1_score(y_test, y_pred, average='weighted', zero_division=0),
-            'roc_auc': roc_auc_score(y_test, y_proba, multi_class='ovr', average='weighted')
+            'roc_auc': roc_auc_score(y_test, y_score, average='weighted')
         }
 
         print(f"\n{model_name} Performance:")
