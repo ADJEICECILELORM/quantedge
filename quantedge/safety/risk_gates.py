@@ -47,8 +47,12 @@ class RiskGates:
     GA_UPDATE_COOLDOWN_HOURS = 24      # Minimum 24h between GA updates
     GA_MAX_UPDATES_PER_MONTH = 4       # Maximum 4 GA updates per month
 
+    _IMMUTABLE_ATTRIBUTES = (
+        'account_balance',
+    )
+
     def __init__(self, account_balance: float):
-        self.account_balance = account_balance
+        object.__setattr__(self, 'account_balance', account_balance)
         self.start_balance = account_balance
         self.daily_loss = 0.0
         self.last_ga_update = None
@@ -56,6 +60,24 @@ class RiskGates:
         self.kill_switch_triggered = False
         self.open_positions_count = 0
         self.human_override = False
+
+    def __setattr__(self, name: str, value):
+        """Block writes to HARD LIMIT attributes (class-level constants).
+
+        These constraints must not be changed by the GA, a runaway loop, or a
+        bad call. Attempts to assign class constants with the same name on the
+        instance raise RuntimeError instead of silently shadowing them.
+
+        Args:
+            name: Attribute name.
+            value: New value.
+        """
+        if name in self.__class__.__dict__ and not name.startswith('_'):
+            raise RuntimeError(
+                f"RiskGates.{name} is an immutable hard limit and cannot be "
+                f"modified (attempted value: {value!r})"
+            )
+        object.__setattr__(self, name, value)
 
     def check_position_size(self, position_size_usd: float) -> Dict:
         """

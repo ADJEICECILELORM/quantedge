@@ -49,6 +49,7 @@ class InferencePipeline:
         try:
             # Check if model files exist
             model_dir = "models/saved"
+            self.model_dir = model_dir
             required_files = ['scaler.pkl', 'rf_model.pkl', 'xgb_model.pkl', 'lr_model.pkl']
 
             for file in required_files:
@@ -65,6 +66,20 @@ class InferencePipeline:
                 'xgb': joblib.load(os.path.join(model_dir, "xgb_model.pkl")),
                 'lr': joblib.load(os.path.join(model_dir, "lr_model.pkl"))
             }
+
+            # Load training metadata for feature validation
+            from models.registry import load_metadata
+            self.feature_metadata = load_metadata(model_dir)
+            if self.feature_metadata:
+                logger.info(
+                    f"Loaded training metadata: {self.feature_metadata.get('n_features')} "
+                    f"features, trained {self.feature_metadata.get('trained_at')}"
+                )
+            else:
+                logger.warning(
+                    "No model metadata found - feature validation disabled. "
+                    "Retrain models to enable it."
+                )
 
             # Warm up models (dummy prediction for JIT compilation)
             self._warmup_models()
@@ -119,6 +134,13 @@ class InferencePipeline:
             if not feature_cols:
                 logger.error("No feature columns found in DataFrame")
                 return {'direction': 0, 'confidence': 0.5, 'model_votes': {}}
+
+            if getattr(self, 'feature_metadata', None):
+                from models.registry import validate_features
+                ok, msg = validate_features(self.model_dir, feature_cols)
+                if not ok:
+                    logger.error(f"Feature validation failed: {msg}")
+                    return {'direction': 0, 'confidence': 0.5, 'model_votes': {}, 'validation_error': msg}
 
             X = latest_features_df[feature_cols]
 

@@ -9,6 +9,33 @@ import os
 # Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+# Provide a minimal MetaTrader5 stub on non-Windows systems so modules that
+# `import MetaTrader5` for timeframe constants remain importable in tests.
+try:
+    import MetaTrader5  # noqa: F401
+except ImportError:
+    import types
+
+    _mt5_stub = types.ModuleType("MetaTrader5")
+    _TIMEFRAME_CODES = {
+        "M1": 1, "M5": 5, "M15": 15, "M30": 30,
+        "H1": 16385, "H4": 16388, "D1": 16408, "W1": 32769, "MN1": 49153,
+    }
+    for _name, _code in _TIMEFRAME_CODES.items():
+        setattr(_mt5_stub, f"TIMEFRAME_{_name}", _code)
+
+    def _unavailable(*args, **kwargs):
+        raise RuntimeError("MetaTrader5 package is not available on this platform")
+
+    for _fn in (
+        "initialize", "shutdown", "login", "copy_rates_from_pos",
+        "copy_rates_range", "symbol_info", "symbol_info_tick",
+        "account_info", "order_send", "last_error",
+    ):
+        setattr(_mt5_stub, _fn, _unavailable)
+
+    sys.modules["MetaTrader5"] = _mt5_stub
+
 
 @pytest.fixture
 def sample_ohlcv_data():

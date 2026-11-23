@@ -18,6 +18,8 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import xgboost as xgb
 import joblib
 import os
+
+from models.registry import save_metadata
 import json
 from datetime import datetime
 import shutil
@@ -54,6 +56,7 @@ class AdvancedModelTrainer:
                        'target', 'regime_label']
 
         feature_cols = [c for c in self.df.columns if c not in exclude_cols]
+        self.feature_cols_ = feature_cols
 
         print(f"Training on {len(feature_cols)} features (Enhanced with V5 features).")
 
@@ -359,6 +362,16 @@ class AdvancedModelTrainer:
 
         with open(f"{self.model_dir}/model_metadata.json", 'w') as f:
             json.dump(metadata, f, indent=2)
+
+        time_col = 'time' if 'time' in self.df.columns else None
+        save_metadata(
+            model_dir=self.model_dir,
+            feature_cols=getattr(self, 'feature_cols_', []),
+            data_start=self.df[time_col].iloc[0] if time_col else None,
+            data_end=self.df[time_col].iloc[-1] if time_col else None,
+            metrics=(metadata.get('performance') or {}),
+            extra={'trainer': 'AdvancedModelTrainer', 'training_samples': len(self.df)},
+        )
 
         # Save performance history
         with open("models/performance/training_history.json", 'w') as f:

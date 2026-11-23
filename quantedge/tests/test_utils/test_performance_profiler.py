@@ -37,7 +37,8 @@ class TestPerformanceProfiler:
 
         assert result == "done"
         assert len(profiler.timings) > 0
-        assert profiler.call_counts[slow_function.__name__] == 1
+        assert profiler.call_counts[f"{slow_function.__module__}.{slow_function.__name__}"] == 1
+        assert slow_function.__name__ not in profiler.call_counts
 
     def test_multiple_calls(self):
         """Test multiple function calls"""
@@ -51,8 +52,8 @@ class TestPerformanceProfiler:
         for _ in range(5):
             test_func()
 
-        assert profiler.call_counts[test_func.__name__] == 5
-        assert len(profiler.timings[test_func.__name__]) == 5
+        assert profiler.call_counts[f"{test_func.__module__}.{test_func.__name__}"] == 5
+        assert len(profiler.timings[f"{test_func.__module__}.{test_func.__name__}"]) == 5
 
     def test_get_statistics(self):
         """Test statistics generation"""
@@ -67,8 +68,9 @@ class TestPerformanceProfiler:
 
         stats = profiler.get_statistics()
 
-        assert test_func.__name__ in stats
-        func_stats = stats[test_func.__name__]
+        qualified = f"{test_func.__module__}.{test_func.__name__}"
+        assert qualified in stats
+        func_stats = stats[qualified]
 
         assert 'count' in func_stats
         assert 'total_time_ms' in func_stats
@@ -96,8 +98,10 @@ class TestPerformanceProfiler:
 
         bottlenecks = profiler.get_bottlenecks(threshold_ms=100)
 
-        assert slow_func.__name__ in bottlenecks
-        assert fast_func.__name__ not in bottlenecks
+        slow_qualified = f"{slow_func.__module__}.{slow_func.__name__}"
+        fast_qualified = f"{fast_func.__module__}.{fast_func.__name__}"
+        assert slow_qualified in bottlenecks
+        assert fast_qualified not in bottlenecks
 
     def test_clear(self):
         """Test clearing profiler data"""

@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies (MT5 excluded: Windows-only)
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy pandas scikit-learn xgboost joblib ta pytest
+
+      - name: Run tests
+        working-directory: quantedge
+        run: python -m pytest tests -m "not integration and not slow" -q
+
+      - name: Smoke test backtest engine (no external data)
+        working-directory: quantedge
+        run: |
+          python - <<'PY'
+          import numpy as np
+          import pandas as pd
+          from utils.config import load_config
+          from backtest.engine import BacktestEngine
+
+          rng = np.random.default_rng(1)
+          n = 400
+          close = 100 * np.exp(np.cumsum(rng.normal(0, 0.001, n)))
+          df = pd.DataFrame({
+              'time': pd.date_range('2024-01-01', periods=n, freq='5min'),
+              'open': np.roll(close, 1),
+              'high': close * 1.001,
+              'low': close * 0.999,
+              'close': close,
+              'tick_volume': rng.integers(100, 1000, n),
+          })
+          df.loc[0, 'open'] = 100.0
+
+          class BuyAll:
+              def predict(self, row):
+                  return {'direction': 1, 'confidence': 0.9, 'model_votes': {}}
+
+          result = BacktestEngine(df, symbol='SMOKE', config=load_config(), inference=BuyAll()).run()
+          assert result.metrics['n_trades'] > 0
+          assert result.metrics['end_equity'] > 0
+          print('Smoke OK:', result.metrics)
+          PY

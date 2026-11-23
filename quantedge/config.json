@@ -1,0 +1,29 @@
+{
+  "account": {
+    "balance": 10000,
+    "risk_per_trade": 0.02
+  },
+  "symbols": {
+    "forex": ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD"],
+    "metals": ["XAUUSD"]
+  },
+  "timeframe": "M5",
+  "shadow_mode": true,
+  "risk": {
+    "max_daily_loss_percent": 5.0,
+    "max_correlation": 0.7,
+    "max_lot": 1.0
+  },
+  "sessions": {
+    "allowed_utc_ranges": [[7, 17]]
+  },
+  "backtest": {
+    "warmup_bars": 100,
+    "spread_fraction": 0.00005,
+    "commission_per_lot_usd": 7.0,
+    "slippage_fraction": 0.00002,
+    "atr_sl_multiple": 1.5,
+    "atr_tp_multiple": 2.5,
+    "bars_per_year": 28800
+  }
+}

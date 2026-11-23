@@ -21,6 +21,7 @@ htmlcov/
 # Logs and runtime data
 quantedge/logs/
 *.log
+quantedge/backtest_results/
 
 # Model artifacts (regenerate via retrain_models.py)
 quantedge/models/saved/*.pkl
@@ -36,3 +37,4 @@ Thumbs.db
 # Environment / secrets
 .env
 .env.*
+quantedge/config.local.json
