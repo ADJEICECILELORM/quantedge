@@ -51,6 +51,20 @@ def main():
     result = engine.run()
     print(format_report(result.metrics, symbol_name))
 
+    if result.trades is not None and len(result.trades) > 0:
+        from backtest.validation import format_robustness_report, robustness_report
+        bt_cfg = config["backtest"]
+        returns = result.equity_curve.pct_change().dropna()
+        report = robustness_report(
+            result.trades,
+            engine.initial_equity,
+            returns=returns,
+            n_paths=int(bt_cfg.get("mc_paths", 10000)),
+            ruin_drawdown_pct=float(bt_cfg.get("ruin_drawdown_pct", 50.0)),
+            seed=7,
+        )
+        print(format_robustness_report(report, symbol_name))
+
     if args.save_trades and result.trades is not None and len(result.trades) > 0:
         result.trades.to_csv(args.save_trades, index=False)
         print(f"Trades saved to {args.save_trades}")

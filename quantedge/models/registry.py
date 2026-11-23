@@ -14,6 +14,7 @@ def save_metadata(
     hyperparams=None,
     metrics=None,
     extra=None,
+    feature_stats=None,
 ):
     payload = {
         "trained_at": datetime.now(timezone.utc).isoformat(),
@@ -23,6 +24,7 @@ def save_metadata(
         "data_end": str(data_end) if data_end is not None else None,
         "hyperparams": hyperparams or {},
         "metrics": metrics or {},
+        "feature_stats": feature_stats or {},
     }
     if extra:
         payload.update(extra)

@@ -1,12 +1,36 @@
 # risk/position_sizer.py
 import MetaTrader5 as mt5
+import numpy as np
+
+
+def vol_target_scalar(
+    current_atr,
+    entry_price,
+    target_vol_per_bar: float = 0.0015,
+    floor: float = 0.5,
+    ceiling: float = 2.0,
+) -> float:
+    """
+    Scale risk so position sizing targets a constant volatility level:
+    low-vol regimes get bigger exposure, high-vol regimes smaller.
+    Returns 1.0 when volatility cannot be estimated.
+    """
+    try:
+        current_vol = float(current_atr) / float(entry_price)
+    except (TypeError, ValueError, ZeroDivisionError):
+        return 1.0
+    if not np.isfinite(current_vol) or current_vol <= 0:
+        return 1.0
+    scalar = target_vol_per_bar / current_vol
+    return float(min(max(scalar, floor), ceiling))
 
 
 class QuantPositionSizer:
-    def __init__(self, account_balance, risk_per_trade=0.02, max_lot_cap=1.0):
+    def __init__(self, account_balance, risk_per_trade=0.02, max_lot_cap=1.0, vol_target_per_bar=0.0015):
         self.balance = account_balance
         self.risk_per_trade = risk_per_trade
         self.max_lot_cap = max_lot_cap
+        self.vol_target_per_bar = vol_target_per_bar
 
     def refresh_balance(self, live_balance: float = None):
         """
@@ -44,11 +68,8 @@ class QuantPositionSizer:
         point_value = tick_value / tick_size
         risk_amount = self.balance * self.risk_per_trade
 
-        # Volatility Scaling
-        current_vol = (current_atr / entry_price)
-        target_vol = 0.0015
-        vol_scalar = target_vol / current_vol if current_vol > 0 else 1.0
-        vol_scalar = min(max(vol_scalar, 0.5), 2.0)
+        # Volatility Scaling (vol-targeted risk budgeting)
+        vol_scalar = vol_target_scalar(current_atr, entry_price, self.vol_target_per_bar)
 
         adjusted_risk = risk_amount * vol_scalar
         lot_size = adjusted_risk / (price_diff * point_value)

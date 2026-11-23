@@ -81,6 +81,19 @@ class InferencePipeline:
                     "Retrain models to enable it."
                 )
 
+            # Feature drift monitoring (PSI against training distributions)
+            self.drift_monitor = None
+            try:
+                from utils.drift_monitor import FeatureDriftMonitor
+                self.drift_monitor = FeatureDriftMonitor(model_dir)
+                if not self.drift_monitor.enabled:
+                    logger.warning(
+                        "Metadata has no feature_stats - drift monitoring disabled "
+                        "(retrain models to enable)"
+                    )
+            except Exception as e:
+                logger.warning(f"Drift monitor unavailable: {e}")
+
             # Warm up models (dummy prediction for JIT compilation)
             self._warmup_models()
 
@@ -216,13 +229,37 @@ class InferencePipeline:
 
             self.prediction_count += 1
 
-            return {
+            # Rolling-window drift check against training distributions
+            return_dict_drift = None
+            if self.drift_monitor is not None and self.drift_monitor.enabled:
+                try:
+                    self.drift_monitor.push(X)
+                    if self.prediction_count % 100 == 0:
+                        drift = self.drift_monitor.check()
+                        if drift["status"] == "violation":
+                            logger.error(
+                                f"FEATURE DRIFT VIOLATION: max PSI {drift['max_psi']:.3f} - "
+                                f"model is trading on a regime it never trained on. "
+                                f"Worst: {drift['psi'][:5]}"
+                            )
+                        elif drift["status"] == "warning":
+                            logger.warning(
+                                f"Feature drift warning: max PSI {drift['max_psi']:.3f}"
+                            )
+                        return_dict_drift = drift["status"]
+                except Exception as e:
+                    logger.warning(f"Drift check failed: {e}")
+
+            result = {
                 'direction': direction,
                 'confidence': float(confidence),
                 'model_votes': predictions,
                 'score_long': float(score_long),
                 'score_short': float(score_short)
             }
+            if return_dict_drift:
+                result['drift_status'] = return_dict_drift
+            return result
 
         except Exception as e:
             logger.exception(f"Unexpected error in predict(): {e}")

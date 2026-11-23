@@ -1,6 +1,18 @@
 # Changelog
 
 ## 2.0 - 2026-11
+- Statistical validation (`backtest/validation.py`): Monte Carlo
+  bootstrap of the trade sequence (max-drawdown distribution, P(ruin),
+  P(profit)), Probabilistic Sharpe Ratio and Deflated Sharpe Ratio
+  (multiple-testing correction); printed by `run_backtest.py`
+- Risk budgeting: volatility-targeted position sizing
+  (`risk.position_sizer:vol_target_scalar`, `risk.vol_target_per_bar`)
+  and portfolio-level gross/net exposure caps
+  (`risk/portfolio.py`, enforced pre-trade in `bot.py`)
+- Feature drift monitoring (`utils/drift_monitor.py`): PSI against
+  training-time feature distributions stored in `metadata.json`
+  (`feature_stats`), noise-adjusted for window size; inference pipeline
+  evaluates a rolling window every 100 predictions
 
 - Tag: label-corruption fix (`features/label_generator.py`): the last
   `forward_bars` rows were silently labeled 0 instead of dropped; all

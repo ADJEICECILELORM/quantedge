@@ -43,6 +43,7 @@ from utils.mt5_connector import MT5Connector
 from features.feature_engineer import FeatureEngineer
 from pipeline.inference_pipeline import InferencePipeline
 from risk.position_sizer import QuantPositionSizer
+from risk.portfolio import PortfolioExposureManager
 from risk.drawdown_guard import DrawdownGuard
 from utils.order_executor import OrderExecutor
 from utils.position_manager import PositionManager
@@ -136,12 +137,17 @@ class QuantEdgeV6:
         self.mtf = MultiTimeframeAnalyzer()
         self.kelly_v5 = KellyCriterion(lookback=50, fraction=0.25)
         self.correlation = CorrelationFilter(max_correlation=self.config['risk']['max_correlation'])
+        self.portfolio = PortfolioExposureManager(
+            max_gross_exposure_usd=self.config['risk'].get('max_gross_exposure_usd', 20000),
+            max_net_exposure_usd=self.config['risk'].get('max_net_exposure_usd', 10000),
+        )
         self.calendar = EconomicCalendar()
         self.latency_monitor = LatencyMonitor(warning_threshold_ms=1000.0)
         self.sizer = QuantPositionSizer(
             account_balance=account_balance,
             risk_per_trade=self.config['account']['risk_per_trade'],
             max_lot_cap=self.config['risk']['max_lot'],
+            vol_target_per_bar=self.config['risk'].get('vol_target_per_bar', 0.0015),
         )
 
         # === V6 RAG INTELLIGENCE ===
@@ -575,6 +581,12 @@ class QuantEdgeV6:
                 logger.info(f"Correlation filter blocked {symbol}: {corr_check['reason']}")
                 return
 
+            # Portfolio-level exposure cap (pre-trade rules engine)
+            exposure_check = self.portfolio.can_open(symbol, position_size_usd, signal)
+            if not exposure_check['allowed']:
+                logger.info(f"Exposure cap blocked {symbol}: {exposure_check['reason']}")
+                return
+
             # Calculate lot size
             current_price = analysis['current_price']
             symbol_info = mt5.symbol_info(symbol)
@@ -630,6 +642,7 @@ class QuantEdgeV6:
 
                 # Track in correlation filter even in shadow mode
                 self.correlation.add_position(symbol, signal)
+                self.portfolio.register_position(symbol, position_size_usd, signal)
                 self.risk_gates.increment_open_trades()
 
                 print(f"\n🔮 SHADOW TRADE LOGGED: {symbol} {order_type.upper()}")
@@ -664,6 +677,7 @@ class QuantEdgeV6:
 
                     # Track in correlation filter
                     self.correlation.add_position(symbol, signal)
+                    self.portfolio.register_position(symbol, position_size_usd, signal)
 
                     # Track in position manager
                     self.manager.add_trade(

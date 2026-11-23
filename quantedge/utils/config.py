@@ -19,6 +19,9 @@ DEFAULTS = {
         "max_daily_loss_percent": 5.0,
         "max_correlation": 0.7,
         "max_lot": 1.0,
+        "vol_target_per_bar": 0.0015,
+        "max_gross_exposure_usd": 20000,
+        "max_net_exposure_usd": 10000,
     },
     "rag": {
         "enabled": False,
@@ -38,6 +41,9 @@ DEFAULTS = {
         "atr_sl_multiple": 1.5,
         "atr_tp_multiple": 2.5,
         "bars_per_year": 28800,
+        "min_confidence": 0.55,
+        "mc_paths": 10000,
+        "ruin_drawdown_pct": 50.0,
     },
 }
 

@@ -20,6 +20,7 @@ import joblib
 import os
 
 from models.registry import save_metadata
+from utils.drift_monitor import summarize_feature_distribution
 import json
 from datetime import datetime
 import shutil
@@ -366,9 +367,11 @@ class AdvancedModelTrainer:
             json.dump(metadata, f, indent=2)
 
         time_col = 'time' if 'time' in self.df.columns else None
+        feature_stats = summarize_feature_distribution(self.df, getattr(self, 'feature_cols_', []))
         save_metadata(
             model_dir=self.model_dir,
             feature_cols=getattr(self, 'feature_cols_', []),
+            feature_stats=feature_stats,
             data_start=self.df[time_col].iloc[0] if time_col else None,
             data_end=self.df[time_col].iloc[-1] if time_col else None,
             metrics=(metadata.get('performance') or {}),
