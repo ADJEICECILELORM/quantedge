@@ -51,9 +51,32 @@ class TestInferenceLoading:
     def test_get_inference_tries_to_load_models(self, config):
         import os
 
-        if not os.path.exists("models/saved"):
+        if not os.path.exists("models/saved/rf_model.pkl"):
             pytest.skip("no local trained models")
         engine = BacktestEngine(make_data(), symbol="TEST", config=config)
         inference = engine._get_inference()
         assert inference is not None
         assert hasattr(inference, "predict")
+
+
+class AlwaysLongStrongADX:
+    def predict(self, row_df):
+        return {'direction': 1, 'confidence': 0.9, 'model_votes': {}}
+
+
+class TestAdxGate:
+    def test_min_adx_gates_entries(self, config):
+        cfg = load_config()
+        cfg["backtest"]["warmup_bars"] = 60
+        data = make_data(400, seed=11)
+        from features.feature_engineer import FeatureEngineer
+        feats = FeatureEngineer().create_features(data)
+        assert feats["adx"].notna().any()
+
+        cfg["backtest"]["min_adx"] = 0.0
+        base = BacktestEngine(data, symbol="T", config=cfg, inference=AlwaysLongStrongADX()).run()
+
+        cfg["backtest"]["min_adx"] = 1e9
+        gated = BacktestEngine(data, symbol="T", config=cfg, inference=AlwaysLongStrongADX()).run()
+        assert len(base.trades) > 0
+        assert len(gated.trades) == 0

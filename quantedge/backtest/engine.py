@@ -80,6 +80,8 @@ class BacktestEngine:
         self.atr_tp_multiple = float(self.bt_cfg["atr_tp_multiple"])
         self.risk_per_trade = float(self.config["account"]["risk_per_trade"])
         self.min_confidence = float(self.bt_cfg.get("min_confidence", 0.55))
+        # Optional regime gate: 0 disables (default), else require ADX >= value
+        self.min_adx = float(self.bt_cfg.get("min_adx", 0.0))
 
     def _get_inference(self):
         if self.inference is not None:
@@ -166,6 +168,11 @@ class BacktestEngine:
                 atr = bar.get("atr_14")
                 if atr is None or not np.isfinite(atr) or atr <= 0:
                     continue
+
+                if self.min_adx > 0:
+                    adx = bar.get("adx")
+                    if adx is None or not np.isfinite(adx) or adx < self.min_adx:
+                        continue
 
                 raw_price = float(next_bar["open"])
                 spread = self.spread_fraction * raw_price

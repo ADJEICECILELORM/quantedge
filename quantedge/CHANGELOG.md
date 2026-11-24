@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.4 - 2026-11
+- The high-power test definitively kills the current strategy design:
+  pooled walk-forward across 15 years of daily EURUSD (12 annual
+  retrains, 193 OOS trades) loses money overall (-$2.1k on $10k,
+  PSR 0.22) - the earlier +20-25% OOS results were favorable-period
+  artifacts, not edge. A dumb SMA20/50 crossover control run through
+  the identical engine barely breaks even (+14% over 15y, PF 1.04),
+  and the ML ensemble UNDERPERFORMS it. Entry-ADX regime buckets show
+  no exploitable structure (PF 1.29/0.73/1.27/0.77)
+- `backtest.min_adx` config knob: optional ADX regime gate at entry
+  (0 = disabled, the default). Regression-tested
+- Conclusion: predicting next-5-bar direction from technical features
+  on FX daily bars has no persistent edge. Signal redesign required
+  before any live capital (different targets/horizons, carry or
+  momentum premia, or ML purely as a filter on a profitable baseline)
+
 ## 2.3 - 2026-11
 - Bug: Sharpe/Sortino annualization used a hardcoded `bars_per_year`
   (28800) regardless of timeframe, inflating daily-bar Sharpe ~10x;
