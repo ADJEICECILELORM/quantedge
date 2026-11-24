@@ -20,7 +20,7 @@ concurrency:
 jobs:
   tick:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 70
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,6 +44,28 @@ jobs:
           git diff --cached --quiet && echo "no state change" && exit 0
           git commit -m "shadow: $(date -u +%FT%TZ)"
           git push
+      - name: Bootstrap next tick (cron-independent chain)
+        if: success()
+        continue-on-error: true
+        run: |
+          cd quantedge
+          if grep -q '"finalized": true' shadow/state.json 2>/dev/null; then
+            echo "experiment finalized; chain stops"
+            exit 0
+          fi
+          now=$(date +%s)
+          next=$(( (now / 3600 + 1) * 3600 + 30 ))
+          wait=$(( next - now ))
+          echo "sleeping ${wait}s until next hour"
+          sleep "$wait"
+          curl -sS -f -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/shadow_momentum.yml/dispatches \
+            -d '{"ref":"shadow-trading"}' \
+            && echo "next tick dispatched"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - name: Disable workflow after deadline
         if: failure() || always()
         continue-on-error: true
