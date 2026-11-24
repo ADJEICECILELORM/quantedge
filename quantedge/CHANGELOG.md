@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.11 - 2026-11
+- Funding-cost audit of the crypto-3 validated result: replayed actual
+  Binance USDT-M perpetual funding history (BTCUSDT 7,898 events from
+  2019-09, ETHUSDT 7,664 from 2019-11, SOLUSDT 6,865 from 2020-09;
+  mean +1.1bp/day BTC, +1.3bp/day ETH, +0.4bp/day SOL) against every
+  trade's holding days. **Verdict: edge survives essentially intact.**
+  Pooled PnL $205,778 -> $203,258 (-1.2%), PSR unchanged at 1.0000,
+  max drawdown marginally better (-58.6% -> -58.3% isolated-run
+  aggregation). Positive funding means shorts EARN on average; the
+  small net drag comes from the long leg dominating PnL. The "shorts'
+  funding not yet modeled" caveat from 2.9 is closed.
+- Portfolio exposure-cap fix: each symbol's engine now sizes off an
+  equal slice of starting equity (initial_equity / n_symbols) instead
+  of the full account, so combined concurrent notional scales like a
+  single-symbol deployment. FX 7-pair portfolio now fully inside the
+  $20k cap (previously breached). Crypto-3 portfolio peak down from
+  ~$63k to $21,059 - a residual 5% breach driven purely by the BTC
+  slice compounding ~14x over 12y; live deployment should equalize
+  sub-account slices periodically (documented, not hidden). 2 new
+  portfolio tests (cap respected at start, position notional scales
+  1/N with symbol count); suite 177 passed.
+
 ## 2.10 - 2026-11
 - Cross-sectional altcoin rotation backtest (the "trade small coins and
   rotate into majors" idea, made systematic): Binance liquid universe

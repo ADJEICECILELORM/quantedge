@@ -11,9 +11,9 @@ class BuyEveryBar:
         return {"direction": 1, "confidence": 0.9, "model_votes": {}}
 
 
-def make_data(n=400, seed=7):
+def make_data(n=400, seed=7, vol=0.001):
     rng = np.random.default_rng(seed)
-    returns = rng.normal(0.0002, 0.001, n)
+    returns = rng.normal(0.0002, vol, n)
     close = 100 * np.exp(np.cumsum(returns))
     open_ = np.roll(close, 1)
     open_[0] = 100.0
@@ -62,6 +62,29 @@ class TestPortfolioBacktest:
         result = PortfolioBacktest(dfs, config=config, inference_map={s: BuyEveryBar() for s in dfs}).run()
         for a, b, c in result.correlation_violations:
             assert abs(c) <= 0.7
+
+    def test_exposure_cap_respected_with_default_cap(self, config):
+        dfs = {f"S{i}USD": make_data(seed=i, vol=0.012) for i in range(4)}
+        result = PortfolioBacktest(dfs, config=config, inference_map={s: BuyEveryBar() for s in dfs}).run()
+        assert result.exposure_violations == []
+        slice_eq = config["account"]["balance"] / 4
+        for r in result.per_symbol.values():
+            assert r.equity_curve.iloc[0] == pytest.approx(slice_eq)
+        assert result.combined_equity.iloc[0] == pytest.approx(config["account"]["balance"])
+
+    def test_position_notional_scales_down_with_symbol_count(self, config):
+        data = make_data(seed=7)
+        single = PortfolioBacktest(
+            {"AAAUSD": data}, config=config, inference_map={"AAAUSD": BuyEveryBar()}
+        ).run()
+        dual = PortfolioBacktest(
+            {"AAAUSD": data, "BBBUSD": data.copy()},
+            config=config,
+            inference_map={s: BuyEveryBar() for s in ("AAAUSD", "BBBUSD")},
+        ).run()
+        single_notional = float(single.combined_trades["units"].iloc[0] * single.combined_trades["entry_price"].iloc[0])
+        dual_notional = float(dual.combined_trades["units"].iloc[0] * dual.combined_trades["entry_price"].iloc[0])
+        assert dual_notional == pytest.approx(single_notional / 2, rel=0.25)
 
     def test_exposure_violations_surfaced_when_cap_low(self, config):
         dfs = {"AAAUSD": make_data(seed=7), "BBBUSD": make_data(seed=11)}

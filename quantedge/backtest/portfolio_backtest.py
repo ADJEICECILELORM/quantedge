@@ -9,9 +9,10 @@ Monte Carlo robustness check on combined trade PnL, a correlation gate
 (pairwise return correlations vs risk.max_correlation) and a gross
 concurrent-exposure check vs risk.max_gross_exposure_usd.
 
-Per-symbol engines each size off the full starting equity, so combined
-exposure can legitimately breach the cap - the point of the check is to
-surface that before live trading does.
+Each symbol's engine sizes off an equal slice of the starting equity
+(initial_equity / n_symbols), so combined concurrent exposure stays in
+line with a single-symbol deployment of the same account. The exposure
+check remains in place to surface any residual breaches.
 """
 from dataclasses import dataclass, field
 
@@ -54,6 +55,7 @@ class PortfolioBacktest:
         )
         self.df_by_symbol = df_by_symbol
         self.inference_map = inference_map or {}
+        self.per_symbol_equity = self.initial_equity / len(df_by_symbol)
 
     def run(self, seed=7) -> PortfolioResult:
         per_symbol = {}
@@ -62,7 +64,7 @@ class PortfolioBacktest:
                 df,
                 symbol=symbol,
                 config=self.config,
-                initial_equity=self.initial_equity,
+                initial_equity=self.per_symbol_equity,
                 inference=self.inference_map.get(symbol),
             )
             per_symbol[symbol] = engine.run()
@@ -96,7 +98,7 @@ class PortfolioBacktest:
             returns = combined_equity.pct_change().dropna()
             robustness = robustness_report(
                 combined_trades,
-                self.initial_equity,
+                combined_equity.iloc[0],
                 returns=returns,
                 n_paths=int(bt_cfg.get("mc_paths", 10000)),
                 ruin_drawdown_pct=float(bt_cfg.get("ruin_drawdown_pct", 50.0)),
@@ -118,7 +120,7 @@ class PortfolioBacktest:
     def _combine_equity(self, per_symbol: dict) -> pd.Series:
         curves = {}
         for symbol, result in per_symbol.items():
-            curves[symbol] = result.equity_curve - self.initial_equity
+            curves[symbol] = result.equity_curve - self.per_symbol_equity
         deltas = pd.DataFrame(curves).ffill().fillna(0.0)
         combined = self.initial_equity + deltas.sum(axis=1)
         combined.name = "equity"
