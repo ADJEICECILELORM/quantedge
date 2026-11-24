@@ -29,7 +29,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install --upgrade pip
+          pip install numpy pandas scikit-learn xgboost ta joblib
       - name: Shadow tick
         run: |
           cd quantedge
