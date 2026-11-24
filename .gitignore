@@ -18,6 +18,11 @@ env/
 htmlcov/
 .tox/
 
+# Shadow trading runtime state (committed only on the shadow-trading branch)
+quantedge/shadow/state.json
+quantedge/shadow/journal.jsonl
+quantedge/shadow/shadow_report.md
+
 # Logs and runtime data
 quantedge/logs/
 *.log

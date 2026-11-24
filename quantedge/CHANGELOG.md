@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.7 - 2026-11
+- 72-hour shadow paper-trading experiment (`shadow/shadow_run.py` +
+  `.github/workflows/shadow_momentum.yml`): hourly GitHub Actions tick
+  evaluates the validated SMA20/50 momentum basket (EURUSD, GBPUSD,
+  USDJPY) on the latest completed daily bar, journals notional trades
+  with engine-identical sizing/costs to the `shadow-trading` branch,
+  and self-finalizes with `shadow_report.md` after the deadline.
+  Smoke-tested live in-sandbox. Paper only - no broker connection
+
 ## 2.6 - 2026-11
 - Portfolio validation of the momentum basket:
   - 4-pair (EUR/GBP/JPY/AUD vs USD), 15y daily: +54.9% combined,

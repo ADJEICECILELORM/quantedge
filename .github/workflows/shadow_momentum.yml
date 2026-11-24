@@ -1,0 +1,54 @@
+# .github/workflows/shadow_momentum.yml
+# 72-hour shadow-mode paper trading experiment for the 3-pair momentum
+# basket. Hourly tick, state persisted on the shadow-trading branch.
+# After the deadline the tick finalizes the report and disables itself.
+name: shadow-momentum
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: shadow-momentum
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: shadow-trading
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Shadow tick
+        run: |
+          cd quantedge
+          python shadow/shadow_run.py --deadline-hours 72
+      - name: Commit state
+        run: |
+          git config user.name "quantedge-shadow-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -f quantedge/shadow/state.json quantedge/shadow/journal.jsonl quantedge/shadow/shadow_report.md
+          git diff --cached --quiet && echo "no state change" && exit 0
+          git commit -m "shadow: $(date -u +%FT%TZ)"
+          git push
+      - name: Disable workflow after deadline
+        if: failure() || always()
+        continue-on-error: true
+        run: |
+          cd quantedge
+          if grep -q '"finalized": true' shadow/state.json 2>/dev/null; then
+            gh workflow disable shadow-momentum.yml || true
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}

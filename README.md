@@ -99,6 +99,13 @@ python utils/risk_report.py --journal data/journal.db
 ```
 P&L attribution by symbol/regime/hour, empirical VaR from realized trade PnL, daily-loss gate headroom, active risk limits.
 
+## Shadow paper trading (GitHub Actions, 72h cap)
+
+```bash
+gh workflow run shadow-momentum.yml --repo ADJEICECILELORM/quantedge
+```
+An hourly job fetches daily Yahoo data for EURUSD/GBPUSD/USDJPY, applies the validated SMA20/50 momentum signal to the latest completed bar, and journals notional trades to the `shadow-trading` branch. After 72 hours it finalizes `quantedge/shadow/shadow_report.md` and disables itself. Paper trades only - no broker, no live capital.
+
 ## Note
 
 `rag/news_ingestion.py` currently returns mock economic-calendar events.
