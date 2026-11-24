@@ -4,8 +4,8 @@
 - Cross-sectional altcoin rotation backtest (the "trade small coins and
   rotate into majors" idea, made systematic): Binance liquid universe
   (top 40 by historical median daily quote volume, 526-pair candidate
-  pool, tokenized-stock and leveraged tokens excluded, person-listing
-  history tracked), weekly Monday rebalance, rank by 30/60/90d return
+  pool, tokenized-stock and leveraged tokens excluded, per-coin
+  listing history tracked), weekly Monday rebalance, rank by 30/60/90d return
   (raw + vol-adjusted), top 5/10, equal + inverse-vol weights, cash or
   BTC/ETH majors fallback, 10bp/side costs.
   **VERDICT: killed. Max drawdown -83% to -97% in ALL 24 configs;
