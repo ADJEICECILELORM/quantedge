@@ -106,6 +106,16 @@ gh workflow run shadow-momentum.yml --repo ADJEICECILELORM/quantedge
 ```
 An hourly job fetches daily Yahoo data for EURUSD/GBPUSD/USDJPY, applies the validated SMA20/50 momentum signal to the latest completed bar, and journals notional trades to the `shadow-trading` branch. After 72 hours it finalizes `quantedge/shadow/shadow_report.md` and disables itself. Paper trades only - no broker, no live capital.
 
+## Multi-asset validation (2026-11)
+
+The same daily momentum framework was validated on crypto and ETFs with per-market cost calibration (stocks fetched dividend/split-adjusted):
+
+- **Crypto-3 pooled (BTC, ETH, SOL, long-short)**: +2059% portfolio over ~12y, Sharpe 1.41, maxDD 22.2%, PF 3.30, PSR 100.0%, DSR (same-market trials) 1.000, P(profitable) 100% - the first strategy to clear the 0.95 proof bar. Caveats: shorts' funding cost unmodeled; SOL listed 2020; peak gross exposure $63k vs $20k cap under risk-parity sizing
+- **ETF-4 pooled (SPY/QQQ/TLT/GLD)**: +153.9%, Sharpe 0.51, PSR 97.5% - GLD-driven; SPY/QQQ correlation 0.93
+- **FX 4-pair**: +54.9%, PSR 0.869 - below the bar (see history below)
+
+Across all 14 tested single-asset configs the max DSR was 0.84, so treat the crypto result as "validated pending a clean forward test", not "certified".
+
 ## Model retraining (GitHub Actions, weekly)
 
 ```bash

@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.9 - 2026-11
+- Multi-asset validation of the same daily momentum framework (price_vs_sma50
+  / sma_cross, flip-exit, 3-ATR stop; crypto costs 12bp/side, ETF costs
+  2bp/side, stocks fetched dividend/split-adjusted):
+  - **Crypto-3 pooled (BTC, ETH, SOL, LS): +2059% portfolio over ~12y,
+    Sharpe 1.41, maxDD 22.2%, PF 3.30, PSR 100.0%, DSR (3 same-market
+    trials) 1.000, P(profitable) 100%, P(ruin) 9.8%** - first result to
+    clear the institutional proof bar. Per-asset PSR 0.9993-1.0000
+  - Both legs profitable: longs ~85% of pooled PnL, shorts positive on
+    all three assets (shorts' funding cost NOT yet modeled)
+  - ETF-4 pooled (SPY/QQQ/TLT/GLD, dividend-adjusted): +153.9%,
+    Sharpe 0.51, PSR 97.5% - GLD-driven, SPY/QQQ correlation 0.93
+  - Honesty log: across ALL 14 single-asset configs max DSR 0.84
+    (selection caveat esp. SOL, listed 2020); long-only + flip-exit
+    degenerates to buy-and-hold (1-3 trades); exposure caps again
+    violated by risk-parity sizing (peak gross $63k vs $20k cap) -
+    per-symbol equity splits required before any live deployment
+
 ## 2.8 - 2026-11
 - GitHub-hosted retraining (`utils/retrain_job.py` +
   `.github/workflows/retrain_models.yml`): weekly scheduled job pulls
