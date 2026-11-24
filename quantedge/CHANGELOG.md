@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.10 - 2026-11
+- Cross-sectional altcoin rotation backtest (the "trade small coins and
+  rotate into majors" idea, made systematic): Binance liquid universe
+  (top 40 by historical median daily quote volume, 526-pair candidate
+  pool, tokenized-stock and leveraged tokens excluded, person-listing
+  history tracked), weekly Monday rebalance, rank by 30/60/90d return
+  (raw + vol-adjusted), top 5/10, equal + inverse-vol weights, cash or
+  BTC/ETH majors fallback, 10bp/side costs.
+  **VERDICT: killed. Max drawdown -83% to -97% in ALL 24 configs;
+  CAGR anywhere from -12% to +19%; lb=60-family configs NEGATIVE while
+  lb=30 positive (parameter fragility); year-by-year lottery profile
+  (+819% 2021, -77% 2022, +258% 2023, -66% 2025, -67% 2026); BTC
+  buy-and-hold on the same span beat every config on Sharpe (0.88);
+  DSR across 24 trials max 0.855 < 0.95.** Cross-sectional chasing of
+  what pumped is exit-liquidity trading; the crypto edge that survived
+  validation is time-series momentum on majors, not alt rotation.
+
+
 ## 2.9 - 2026-11
 - Multi-asset validation of the same daily momentum framework (price_vs_sma50
   / sma_cross, flip-exit, 3-ATR stop; crypto costs 12bp/side, ETF costs
