@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.5 - 2026-11
+- Rule-based strategies module (`backtest/strategies.py`):
+  `FeatureSignMomentum` trades the sign of a trend feature
+  (price-vs-SMA50 or SMA20/50 cross) with an optional deadband; fixed
+  a-priori rules, so any history through the engine is held-out
+  evidence. Used as both strategy and honest baseline
+- `backtest.exit_on_flip` config knob (default off): exit an open
+  trade when the signal direction flips - required for trend/momentum
+  holding since the engine previously only exited via SL/TP
+- 15-year daily EURUSD momentum results (4 variants, flip exits,
+  real costs): +17.6% to +20.7%, Sharpe 0.16-0.22, PF up to 1.27,
+  max DD 16.2%, P(ruin) as low as 0.9%, PSR up to 0.778; DSR after
+  4-trial correction 0.695. All variants positive - first
+  configuration with persistent positive expectancy, though a slow
+  low-Sharpe one (~1.2%/yr at current risk settings). Beats both the
+  ML ensemble (negative) and the no-flip variants
+
 ## 2.4 - 2026-11
 - The high-power test definitively kills the current strategy design:
   pooled walk-forward across 15 years of daily EURUSD (12 annual

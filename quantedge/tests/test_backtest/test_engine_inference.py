@@ -80,3 +80,32 @@ class TestAdxGate:
         gated = BacktestEngine(data, symbol="T", config=cfg, inference=AlwaysLongStrongADX()).run()
         assert len(base.trades) > 0
         assert len(gated.trades) == 0
+
+
+class AlternateDirection:
+    """Flips long/short every 20 bars to exercise flip exits."""
+
+    def __init__(self):
+        self.n = 0
+
+    def predict(self, row_df):
+        self.n += 1
+        direction = 1 if (self.n // 20) % 2 == 0 else -1
+        return {'direction': direction, 'confidence': 0.9, 'model_votes': {}}
+
+
+class TestExitOnFlip:
+    def test_flip_exits_open_position(self, config):
+        cfg = load_config()
+        cfg["backtest"]["warmup_bars"] = 60
+        data = make_data(400, seed=13)
+
+        cfg["backtest"]["exit_on_flip"] = False
+        strat_off = AlternateDirection()
+        off = BacktestEngine(data, symbol="T", config=cfg, inference=strat_off).run()
+
+        cfg["backtest"]["exit_on_flip"] = True
+        on = BacktestEngine(data, symbol="T", config=cfg, inference=AlternateDirection()).run()
+
+        assert len(off.trades) < len(on.trades)
+        assert (on.trades["status"] == "flip").any()

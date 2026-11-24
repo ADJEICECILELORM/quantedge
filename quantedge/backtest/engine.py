@@ -82,6 +82,9 @@ class BacktestEngine:
         self.min_confidence = float(self.bt_cfg.get("min_confidence", 0.55))
         # Optional regime gate: 0 disables (default), else require ADX >= value
         self.min_adx = float(self.bt_cfg.get("min_adx", 0.0))
+        # Exit an open trade when the signal direction flips (momentum-style
+        # holding); default off keeps the classic SL/TP-only behaviour
+        self.exit_on_flip = bool(self.bt_cfg.get("exit_on_flip", False))
 
     def _get_inference(self):
         if self.inference is not None:
@@ -141,6 +144,17 @@ class BacktestEngine:
                 guard.reset_daily(equity)
 
             equity_curve[i] = equity + self._unrealized_pnl(open_trade, i, bar)
+
+            if open_trade is not None and self.exit_on_flip:
+                flip = predict(features.iloc[[i]]).get("direction", 0)
+                if flip != 0 and flip != open_trade.direction:
+                    open_trade.exit_bar = i
+                    open_trade.exit_price = float(bar["close"])
+                    open_trade.pnl_usd = self._pnl(open_trade)
+                    open_trade.status = "flip"
+                    equity += open_trade.pnl_usd
+                    trades.append(open_trade)
+                    open_trade = None
 
             if open_trade is not None:
                 exited, exit_price, exit_kind = self._check_exit(open_trade, bar)
