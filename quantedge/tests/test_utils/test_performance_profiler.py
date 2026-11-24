@@ -1,5 +1,4 @@
 # tests/test_utils/test_performance_profiler.py
-import pytest
 import time
 from utils.performance_profiler import PerformanceProfiler, Timer, timed
 

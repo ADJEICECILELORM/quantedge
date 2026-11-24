@@ -2,7 +2,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 import sys
 import os
 
@@ -23,6 +23,14 @@ except ImportError:
     }
     for _name, _code in _TIMEFRAME_CODES.items():
         setattr(_mt5_stub, f"TIMEFRAME_{_name}", _code)
+
+    _mt5_stub.TRADE_ACTION_DEAL = 1
+    _mt5_stub.TRADE_ACTION_MODIFY = 2
+    _mt5_stub.ORDER_TYPE_BUY = 1
+    _mt5_stub.ORDER_TYPE_SELL = 2
+    _mt5_stub.ORDER_TIME_GTC = 1
+    _mt5_stub.ORDER_FILLING_IOC = 2
+    _mt5_stub.TRADE_RETCODE_DONE = 10009
 
     def _unavailable(*args, **kwargs):
         raise RuntimeError("MetaTrader5 package is not available on this platform")

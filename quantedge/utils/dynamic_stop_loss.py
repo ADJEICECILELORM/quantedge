@@ -1,5 +1,4 @@
 # utils/dynamic_stop_loss.py - Enhanced Stop Loss Management
-import numpy as np
 from typing import Dict
 
 class DynamicStopLoss:

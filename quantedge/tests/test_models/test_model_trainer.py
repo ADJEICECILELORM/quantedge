@@ -1,6 +1,5 @@
 # tests/test_models/test_model_trainer.py
 import numpy as np
-import pytest
 
 from models.advanced_model_trainer import AdvancedModelTrainer
 

@@ -27,7 +27,7 @@ except Exception as e:
 print("\n[2/5] Initializing MT5...")
 if not mt5.initialize():
     error = mt5.last_error()
-    print(f"   [FAIL] MT5 initialization failed")
+    print("   [FAIL] MT5 initialization failed")
     print(f"   Error: {error}")
     print("\n   Solutions:")
     print("   - Make sure MetaTrader 5 is installed")
@@ -90,9 +90,9 @@ for symbol in test_symbols:
                 # Try to enable it
                 if not info.visible:
                     if mt5.symbol_select(test_name, True):
-                        print(f"        Enabled in Market Watch")
+                        print("        Enabled in Market Watch")
                     else:
-                        print(f"        Warning: Could not enable in Market Watch")
+                        print("        Warning: Could not enable in Market Watch")
                 break
         else:
             print(f"   [FAIL] {symbol} - NOT FOUND")
@@ -104,7 +104,7 @@ for symbol in test_symbols:
         # Try to enable it
         if not info.visible:
             if mt5.symbol_select(symbol, True):
-                print(f"        Enabled in Market Watch")
+                print("        Enabled in Market Watch")
 
 # Summary
 print("\n" + "=" * 70)

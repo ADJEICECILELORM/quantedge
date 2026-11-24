@@ -5,10 +5,9 @@ NO raw text decisions - only quantifiable features.
 """
 
 import logging
-from typing import List, Dict, Optional
+from typing import List, Dict
 from datetime import datetime, timezone
 import numpy as np
-import re
 
 from rag.data_schemas import (
     StructuredNewsEvent, NewsFeatures, EventType

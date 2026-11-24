@@ -18,7 +18,6 @@ to reduce directional risk while still capturing alpha.
 
 import logging
 import numpy as np
-import pandas as pd
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 

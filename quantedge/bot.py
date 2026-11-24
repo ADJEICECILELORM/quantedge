@@ -33,10 +33,8 @@ sys.path.append('.')
 import time
 import MetaTrader5 as mt5
 from datetime import datetime, timezone
-import json
-import os
 import argparse
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 # Core V5 Components
 from utils.mt5_connector import MT5Connector
@@ -46,6 +44,7 @@ from risk.position_sizer import QuantPositionSizer
 from risk.portfolio import PortfolioExposureManager
 from risk.drawdown_guard import DrawdownGuard
 from utils.order_executor import OrderExecutor
+from utils.execution_quality import ExecutionQualityTracker
 from utils.position_manager import PositionManager
 
 # V5 Advanced Features
@@ -54,7 +53,6 @@ from utils.kelly_criterion import KellyCriterion
 from utils.correlation_filter import CorrelationFilter
 from utils.economic_calendar import EconomicCalendar
 from utils.latency_monitor import LatencyMonitor
-from dashboard.quant_metrics import QuantMetrics
 
 # V6 RAG Intelligence
 from rag.news_ingestion import NewsIngestionOrchestrator
@@ -127,6 +125,7 @@ class QuantEdgeV6:
         self.fe = FeatureEngineer()
         self.brain = InferencePipeline()  # V5 LSTM models
         self.hands = OrderExecutor()
+        self.execution = ExecutionQualityTracker()
         self.manager = PositionManager()
         self.guard = DrawdownGuard(
             account_balance=account_balance,
@@ -200,7 +199,7 @@ class QuantEdgeV6:
 
         # Summary
         print(f"\n{'='*60}")
-        print(f"✅ SYMBOL DETECTION COMPLETE")
+        print("✅ SYMBOL DETECTION COMPLETE")
         print(f"{'='*60}")
         print(f"   Total Symbols: {len(self.watchlist)}")
         for category, symbols in self.base_symbols.items():
@@ -663,6 +662,13 @@ class QuantEdgeV6:
                 if result['success']:
                     self.trades_today += 1
                     self.risk_gates.increment_open_trades()
+                    if result.get('fill_price') is not None and result.get('requested_price') is not None:
+                        self.execution.record_fill(
+                            symbol=symbol,
+                            direction=signal,
+                            intended_price=result['requested_price'],
+                            actual_price=result['fill_price'],
+                        )
                     self.journal.log_trade(
                         symbol=symbol,
                         direction=signal,
@@ -705,10 +711,12 @@ class QuantEdgeV6:
         print("="*60)
 
         cycle = 0
+        trading_day = None
 
         while True:
             try:
                 cycle += 1
+                now = datetime.now(timezone.utc)
                 print(f"\n{'='*60}")
                 print(f"📊 CYCLE #{cycle} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                 print(f"{'='*60}")
@@ -716,9 +724,16 @@ class QuantEdgeV6:
                 # Check kill switch with LIVE equity, not a startup snapshot
                 live_account = mt5.account_info()
                 current_balance = live_account.equity if live_account else self.account_balance
+
+                # New trading day -> reset the daily drawdown window
+                if trading_day != now.date():
+                    trading_day = now.date()
+                    self.guard.reset_daily(current_balance)
+                self.guard.observe(current_balance)
+
                 kill_switch = self.risk_gates.check_kill_switch(current_balance)
                 if kill_switch['triggered']:
-                    print(f"\n🔴 KILL SWITCH TRIGGERED!")
+                    print("\n🔴 KILL SWITCH TRIGGERED!")
                     print(f"   {kill_switch['reason']}")
                     print(f"   Daily Loss: {kill_switch['daily_loss_pct']:.2f}%")
                     break
@@ -740,7 +755,7 @@ class QuantEdgeV6:
 
                 if high_impact:
                     print(f"\n⚠️  {len(high_impact)} high-impact events in next hour")
-                    print(f"   Proceeding with caution...")
+                    print("   Proceeding with caution...")
 
                 # Analyze all symbols
                 opportunities = []
@@ -776,7 +791,7 @@ class QuantEdgeV6:
                     self.execute_trade(opp)
 
                 # Manage existing positions
-                print(f"\n📋 Managing positions...")
+                print("\n📋 Managing positions...")
                 self.manager.manage_trades()
 
                 # Performance summary
@@ -790,7 +805,7 @@ class QuantEdgeV6:
                         self.shadow_logger.print_performance()
 
                 # Sleep
-                print(f"\n💤 Sleeping 30 seconds...")
+                print("\n💤 Sleeping 30 seconds...")
                 time.sleep(30)
 
             except KeyboardInterrupt:

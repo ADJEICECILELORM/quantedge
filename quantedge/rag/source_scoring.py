@@ -1,7 +1,7 @@
 # rag/source_scoring.py - Source Credibility & Performance Scoring
 import logging
 from typing import Dict, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 import json
 import os
 from collections import defaultdict, deque

@@ -4,9 +4,8 @@ import hashlib
 import json
 import os
 from typing import Any, Optional, Dict
-from functools import lru_cache, wraps
+from functools import wraps
 from collections import OrderedDict
-import pickle
 
 
 class TTLCache:

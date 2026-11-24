@@ -2,7 +2,7 @@
 import time
 import functools
 import tracemalloc
-from typing import Dict, Callable, Any
+from typing import Dict, Callable
 from collections import defaultdict
 import json
 import os

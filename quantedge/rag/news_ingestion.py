@@ -10,7 +10,7 @@ import os
 from rag.data_schemas import (
     RawNewsEvent, StructuredNewsEvent, EventType, SourceType
 )
-from rag.source_scoring import SourceScoringEngine, SourceScore
+from rag.source_scoring import SourceScoringEngine
 
 logger = logging.getLogger(__name__)
 

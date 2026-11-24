@@ -17,7 +17,6 @@ from typing import Dict, Optional
 from datetime import datetime
 from enum import Enum
 import pandas as pd
-import numpy as np
 
 from rag.data_schemas import NewsFeatures, MarketRegime
 

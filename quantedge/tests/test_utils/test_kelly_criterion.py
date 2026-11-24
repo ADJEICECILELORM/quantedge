@@ -1,5 +1,4 @@
 # tests/test_utils/test_kelly_criterion.py
-import pytest
 from utils.kelly_criterion import KellyCriterion
 
 

@@ -1,7 +1,6 @@
 # utils/sniper_mode.py - High Volatility Sniping + News Arbitrage
 import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict
 
 class SniperMode:

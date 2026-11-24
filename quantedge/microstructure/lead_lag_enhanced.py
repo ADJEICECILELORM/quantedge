@@ -16,7 +16,7 @@ import logging
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import defaultdict, deque
 
 logger = logging.getLogger(__name__)

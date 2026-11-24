@@ -292,12 +292,12 @@ class LatencyMonitor:
     def print_latency_report(self):
         """Print detailed latency analysis report"""
         print(f"\n{'='*60}")
-        print(f"⚡ LATENCY MONITORING REPORT")
+        print("⚡ LATENCY MONITORING REPORT")
         print(f"{'='*60}")
 
         # Overall stats
         overall = self.get_overall_stats()
-        print(f"\n📊 OVERALL STATISTICS:")
+        print("\n📊 OVERALL STATISTICS:")
         print(f"   Total Signals: {overall['total_signals']}")
         print(f"   Slow Signals (>{self.warning_threshold_ms}ms): {overall['slow_signals']} "
               f"({overall['slow_percentage']:.1f}%)")
@@ -309,7 +309,7 @@ class LatencyMonitor:
         # Slowest modules
         slowest = self.get_slowest_modules(top_n=5)
         if slowest:
-            print(f"\n🐌 SLOWEST MODULES:")
+            print("\n🐌 SLOWEST MODULES:")
             for i, module in enumerate(slowest, 1):
                 print(f"   {i}. {module['module']}: {module['avg_latency_ms']:.1f} ms "
                       f"({module['count']} samples)")
@@ -317,14 +317,14 @@ class LatencyMonitor:
         # Recent bottlenecks
         recent_bottlenecks = self.bottlenecks[-10:] if self.bottlenecks else []
         if recent_bottlenecks:
-            print(f"\n⚠️ RECENT BOTTLENECKS (Last 10):")
+            print("\n⚠️ RECENT BOTTLENECKS (Last 10):")
             for bottleneck in recent_bottlenecks:
                 severity_emoji = '🔴' if bottleneck['severity'] == 'high' else '🟡'
                 print(f"   {severity_emoji} {bottleneck['operation']}: {bottleneck['latency_ms']:.1f} ms "
                       f"at {bottleneck['time'].strftime('%H:%M:%S')}")
 
         # Per-symbol stats
-        print(f"\n📈 PER-SYMBOL LATENCY:")
+        print("\n📈 PER-SYMBOL LATENCY:")
         for symbol in sorted(self.symbol_latencies.keys()):
             stats = self.get_symbol_stats(symbol)
             if stats['count'] > 0:

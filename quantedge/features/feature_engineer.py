@@ -2,9 +2,8 @@
 import pandas as pd
 import numpy as np
 import ta
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional, Dict
-import hashlib
 
 class FeatureEngineer:
     def __init__(self):
@@ -177,7 +176,23 @@ class FeatureEngineer:
         else:
             df['macro_usd_strength'] = 0
 
-        # Clean up
+        # Clean up: replace infinities (zero-division), then drop feature
+        # columns that are degenerate on this data source (e.g. volume
+        # features on a source that reports no volume) instead of letting
+        # dropna() delete every row.
+        numeric_cols = df.select_dtypes(include=[np.number]).columns
+        df[numeric_cols] = df[numeric_cols].replace([np.inf, -np.inf], np.nan)
+        nan_frac = df.isna().mean()
+        dead_cols = [
+            c for c in df.columns
+            if c not in ('time', 'target') and nan_frac.get(c, 0.0) > 0.5
+        ]
+        if dead_cols:
+            print(
+                f"Feature engineering dropped {len(dead_cols)} degenerate columns "
+                f"(>50% NaN): {dead_cols[:8]}{'...' if len(dead_cols) > 8 else ''}"
+            )
+            df.drop(columns=dead_cols, inplace=True)
         df.dropna(inplace=True)
         return df
 

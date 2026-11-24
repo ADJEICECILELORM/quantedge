@@ -1,7 +1,7 @@
 # utils/relim_shield.py - Relim_conf (The Shield): Dynamic Confidence Threshold
 import numpy as np
 from collections import deque
-from typing import Dict, List
+from typing import Dict
 
 class RelimShield:
     """
@@ -120,13 +120,13 @@ class RelimShield:
     def print_status(self):
         """Print shield status"""
         stats = self.get_stats()
-        print(f"\n🛡️ === RELIM SHIELD STATUS ===")
+        print("\n🛡️ === RELIM SHIELD STATUS ===")
         print(f"   Current Threshold: {stats['threshold']:.2f}")
         print(f"   Win Rate: {stats['win_rate']*100:.1f}%")
         print(f"   Profit Factor: {stats['profit_factor']:.2f}")
         print(f"   Trades Tracked: {stats['trades_count']}")
         print(f"   Avg Confidence: {stats['avg_confidence']:.2f}")
-        print(f"=========================\n")
+        print("=========================\n")
 
     def reset(self):
         """Reset shield to initial state"""

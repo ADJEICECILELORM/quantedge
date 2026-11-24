@@ -27,6 +27,40 @@ import shutil
 from typing import Dict, Tuple
 
 
+class MulticlassLabelXGB(xgb.XGBClassifier):
+    """
+    XGBClassifier that accepts arbitrary signed labels like {-1, 0, 1}.
+
+    XGBoost requires contiguous integer labels starting at 0, so y is
+    re-encoded ascending on fit and predictions are translated back on
+    predict(). predict_proba() column order always matches ascending
+    classes_, which keeps InferencePipeline's class-aware mapping valid.
+    """
+
+    def fit(self, X, y, **kwargs):
+        self._orig_classes_ = np.unique(y)
+        remap = {c: i for i, c in enumerate(self._orig_classes_)}
+        y_enc = np.asarray([remap[v] for v in y])
+        self._raw_label_fit = True
+        try:
+            return super().fit(X, y_enc, **kwargs)
+        finally:
+            self._raw_label_fit = False
+
+    def predict(self, X, **kwargs):
+        encoded = super().predict(X, **kwargs)
+        return self._orig_classes_[np.asarray(encoded, dtype=int)]
+
+    def predict_proba(self, X, **kwargs):
+        return super().predict_proba(X, **kwargs)
+
+    @property
+    def classes_(self):
+        if getattr(self, '_raw_label_fit', False):
+            return np.arange(self.n_classes_)
+        return self._orig_classes_
+
+
 class AdvancedModelTrainer:
     """
     Advanced model trainer with validation and optimization.
@@ -112,8 +146,8 @@ class AdvancedModelTrainer:
             validation_scores['rf'].append(rf_score)
             print(f"  RF: {rf_score:.4f}")
 
-            xgb_clf = xgb.XGBClassifier(n_estimators=200, learning_rate=0.05, max_depth=6,
-                                       use_label_encoder=False, eval_metric='logloss', n_jobs=-1)
+            xgb_clf = MulticlassLabelXGB(n_estimators=200, learning_rate=0.05, max_depth=6,
+                                         use_label_encoder=False, eval_metric='logloss', n_jobs=-1)
             xgb_clf.fit(X_train_fold, y_train_fold)
             xgb_score = xgb_clf.score(X_val_fold, y_val_fold)
             validation_scores['xgb'].append(xgb_score)
@@ -127,7 +161,7 @@ class AdvancedModelTrainer:
 
         # Average scores
         print(f"\n{'='*60}")
-        print(f"VALIDATION SUMMARY:")
+        print("VALIDATION SUMMARY:")
         print(f"{'='*60}")
         for model_name, scores in validation_scores.items():
             avg_score = np.mean(scores)
@@ -158,7 +192,7 @@ class AdvancedModelTrainer:
                 'learning_rate': [0.01, 0.05, 0.1],
                 'max_depth': [4, 6, 8]
             }
-            model = xgb.XGBClassifier(use_label_encoder=False, eval_metric='logloss', n_jobs=-1)
+            model = MulticlassLabelXGB(use_label_encoder=False, eval_metric='logloss', n_jobs=-1)
 
         elif model_type == 'lr':
             param_grid = {
@@ -188,7 +222,7 @@ class AdvancedModelTrainer:
         X_train, X_test, y_train, y_test, feature_cols = self.prepare_data()
 
         print(f"\n{'='*60}")
-        print(f"TRAINING MODELS")
+        print("TRAINING MODELS")
         print(f"{'='*60}")
 
         # Random Forest
@@ -209,8 +243,8 @@ class AdvancedModelTrainer:
             xgb_clf, xgb_params = self.optimize_hyperparameters(X_train, y_train, 'xgb')
         else:
             print("\n--- Training XGBoost ---")
-            xgb_clf = xgb.XGBClassifier(n_estimators=200, learning_rate=0.05, max_depth=6,
-                                       use_label_encoder=False, eval_metric='logloss', n_jobs=-1)
+            xgb_clf = MulticlassLabelXGB(n_estimators=200, learning_rate=0.05, max_depth=6,
+                                         use_label_encoder=False, eval_metric='logloss', n_jobs=-1)
             xgb_clf.fit(X_train, y_train)
 
         self.models['xgb'] = xgb_clf
@@ -218,7 +252,7 @@ class AdvancedModelTrainer:
 
         # Logistic Regression
         print("\n--- Training Logistic Regression ---")
-        lr = LogisticRegression(max_iter=1000, n_jobs=-1)
+        lr = LogisticRegression(max_iter=1000, n_jobs=-1, class_weight='balanced')
         lr.fit(X_train, y_train)
         self.models['lr'] = lr
         lr_metrics = self._evaluate_model(lr, X_test, y_test, "Logistic Regression")
@@ -252,7 +286,17 @@ class AdvancedModelTrainer:
         """
         y_pred = model.predict(X_test)
         y_proba = model.predict_proba(X_test)
-        y_score = y_proba[:, 1] if y_proba.ndim == 2 and y_proba.shape[1] == 2 else y_proba
+
+        if y_proba.ndim == 2 and y_proba.shape[1] == 2:
+            y_score = y_proba[:, 1]
+            roc_auc = roc_auc_score(y_test, y_score, average='weighted')
+        elif y_proba.ndim == 2 and y_proba.shape[1] > 2 and len(np.unique(y_test)) > 2:
+            roc_auc = roc_auc_score(
+                y_test, y_proba, multi_class='ovr', average='weighted', labels=model.classes_
+            )
+        else:
+            print(f"  {model_name}: degenerate class set in test fold - ROC AUC set to 0.5")
+            roc_auc = 0.5
 
         # Calculate metrics
         metrics = {
@@ -260,7 +304,7 @@ class AdvancedModelTrainer:
             'precision': precision_score(y_test, y_pred, average='weighted', zero_division=0),
             'recall': recall_score(y_test, y_pred, average='weighted', zero_division=0),
             'f1': f1_score(y_test, y_pred, average='weighted', zero_division=0),
-            'roc_auc': roc_auc_score(y_test, y_score, average='weighted')
+            'roc_auc': roc_auc
         }
 
         print(f"\n{model_name} Performance:")
@@ -314,7 +358,7 @@ class AdvancedModelTrainer:
                         'lr': lr_weight
                     }
 
-        print(f"\nBest Ensemble Weights:")
+        print("\nBest Ensemble Weights:")
         print(f"  RF:  {best_weights['rf']:.2f}")
         print(f"  XGB: {best_weights['xgb']:.2f}")
         print(f"  LR:  {best_weights['lr']:.2f}")
@@ -339,6 +383,13 @@ class AdvancedModelTrainer:
         """
         Save models with versioning.
         """
+        try:
+            from utils.retrain_trigger import clear_flag
+            if clear_flag(self.model_dir):
+                print("Cleared retrain-required flag (fresh models deployed)")
+        except Exception:
+            pass
+
         if with_backup:
             self.backup_existing_models()
 
@@ -434,11 +485,11 @@ class AdvancedModelTrainer:
         print(f"Training Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"Training Samples: {len(self.df)}")
         print(f"Number of Features: {len(self.df.columns) - 6}")
-        print(f"\nModels Trained:")
-        print(f"  ✅ Random Forest")
-        print(f"  ✅ XGBoost")
-        print(f"  ✅ Logistic Regression")
-        print(f"\nEnsemble Weights:")
+        print("\nModels Trained:")
+        print("  ✅ Random Forest")
+        print("  ✅ XGBoost")
+        print("  ✅ Logistic Regression")
+        print("\nEnsemble Weights:")
         if self.ensemble_weights:
             print(f"  RF:  {self.ensemble_weights['rf']:.2f}")
             print(f"  XGB: {self.ensemble_weights['xgb']:.2f}")

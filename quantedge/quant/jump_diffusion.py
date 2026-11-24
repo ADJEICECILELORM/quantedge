@@ -17,7 +17,7 @@ Calculate probability of price jump given high-impact news event.
 
 import logging
 import numpy as np
-from typing import Dict, Optional
+from typing import Dict
 from dataclasses import dataclass
 
 from rag.data_schemas import NewsFeatures

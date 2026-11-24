@@ -1,8 +1,7 @@
 import os
 
-import pytest
 
-from models.championship import challenge_summary, promote_challenger, should_promote
+from models.championship import promote_challenger, should_promote
 from models.registry import save_metadata
 
 

@@ -12,7 +12,6 @@ import requests
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import pandas as pd
-import numpy as np
 from bs4 import BeautifulSoup
 import json
 
@@ -217,7 +216,7 @@ class AdvancedNewsArbitrage:
             return False
 
         print(f"\n{'='*60}")
-        print(f"📰 FETCHING REAL-TIME NEWS EVENTS")
+        print("📰 FETCHING REAL-TIME NEWS EVENTS")
         print(f"{'='*60}")
 
         # Try ForexFactory first

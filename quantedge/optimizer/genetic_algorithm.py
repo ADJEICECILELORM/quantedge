@@ -21,7 +21,7 @@ import numpy as np
 import json
 import os
 from typing import Dict, List, Tuple, Optional
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from copy import deepcopy
 
 from optimizer.fitness_functions import FitnessFunction

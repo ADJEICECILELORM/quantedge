@@ -47,7 +47,7 @@ def retrain_models(symbol: str = "EURUSD",
     print(" QUANTEDGE V5 - AUTOMATED MODEL RETRAINING")
     print("="*80)
     print(f"Symbol: {symbol}")
-    print(f"Timeframe: M5")
+    print("Timeframe: M5")
     print(f"Bars: {bars}")
     print(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("="*80)
@@ -112,8 +112,8 @@ def retrain_models(symbol: str = "EURUSD",
     lg = LabelGenerator(forward_bars=5, vol_multiple=0.5)
     df = lg.create_labels(df)
 
-    print(f"✅ Labels generated")
-    print(f"   Class distribution:")
+    print("✅ Labels generated")
+    print("   Class distribution:")
     print(df['target'].value_counts())
 
     # ========== Step 4: Walk-Forward Validation (Optional) ==========
@@ -168,19 +168,19 @@ def retrain_models(symbol: str = "EURUSD",
     print("\n" + "="*80)
     print(" RETRAINING COMPLETE")
     print("="*80)
-    print(f"\n📊 Performance Summary:")
+    print("\n📊 Performance Summary:")
     print(f"   RF Accuracy:  {performance['rf']['accuracy']:.4f}")
     print(f"   XGB Accuracy: {performance['xgb']['accuracy']:.4f}")
     print(f"   LR Accuracy:  {performance['lr']['accuracy']:.4f}")
 
-    print(f"\n🔄 Ensemble Weights:")
+    print("\n🔄 Ensemble Weights:")
     print(f"   RF:  {ensemble_weights['rf']:.2f}")
     print(f"   XGB: {ensemble_weights['xgb']:.2f}")
     print(f"   LR:  {ensemble_weights['lr']:.2f}")
 
-    print(f"\n💾 Models saved to: models/saved/")
-    print(f"📁 Backup saved to: models/backup/")
-    print(f"📈 Performance history: models/performance/training_history.json")
+    print("\n💾 Models saved to: models/saved/")
+    print("📁 Backup saved to: models/backup/")
+    print("📈 Performance history: models/performance/training_history.json")
 
     return True
 

@@ -1,7 +1,6 @@
 # utils/mt5_connector.py
 import MetaTrader5 as mt5
 import pandas as pd
-from datetime import datetime, timedelta
 import os
 from typing import Optional, List, Dict
 

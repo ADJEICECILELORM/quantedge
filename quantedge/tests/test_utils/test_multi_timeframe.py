@@ -1,5 +1,4 @@
 # tests/test_utils/test_multi_timeframe.py
-import pytest
 import pandas as pd
 import numpy as np
 from utils.multi_timeframe import MultiTimeframeAnalyzer

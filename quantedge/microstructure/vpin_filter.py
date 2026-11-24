@@ -18,7 +18,7 @@ Reference: Easley, Lopez de Prado, O'Hara (2011)
 import logging
 import numpy as np
 import pandas as pd
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 from collections import deque
 
 logger = logging.getLogger(__name__)

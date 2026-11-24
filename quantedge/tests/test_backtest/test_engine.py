@@ -132,3 +132,52 @@ class TestMarkToMarket:
         assert not np.allclose(values, values[0]), (
             "equity curve is flat while a position is open - mark-to-market missing"
         )
+
+
+class SellEveryBar:
+    """Stub inference that always signals short with high confidence."""
+
+    def predict(self, row_df):
+        return {"direction": -1, "confidence": 0.9, "model_votes": {}}
+
+
+class TestShortLeg:
+    def test_short_entries_recorded_with_direction_minus_one(self, config):
+        engine = BacktestEngine(make_data(), symbol="TEST", config=config, inference=SellEveryBar())
+        result = engine.run()
+        assert result.metrics["n_trades"] > 0
+        assert (result.trades["direction"] == -1).all()
+
+    def test_short_pnl_sign_is_direction_aware(self, config):
+        engine = BacktestEngine(make_data(), symbol="TEST", config=config, inference=SellEveryBar())
+        result = engine.run()
+        # pnl = units * (exit - entry) * direction; a short that exits below its
+        # entry must be positive
+        shorts = result.trades[
+            (result.trades["exit_price"].notna()) & (result.trades["status"].isin(["sl", "tp"]))
+        ]
+        assert len(shorts) > 0
+        tp_trades = shorts[shorts["status"] == "tp"]
+        if len(tp_trades) > 0:
+            assert (tp_trades["pnl_usd"] > 0).all()
+
+    def test_short_stop_loss_is_above_entry(self, config):
+        engine = BacktestEngine(make_data(), symbol="TEST", config=config, inference=SellEveryBar())
+        result = engine.run()
+        shorts = result.trades[result.trades["direction"] == -1]
+        assert len(shorts) > 0
+        assert (shorts["stop_loss"] > shorts["entry_price"]).all()
+        assert (shorts["take_profit"] < shorts["entry_price"]).all()
+
+    def test_short_entry_fills_at_bid(self, config):
+        from features.feature_engineer import FeatureEngineer
+
+        df = make_data()
+        features = FeatureEngineer().create_features(df).reset_index(drop=True)
+        raw_open = features["open"].to_numpy()
+        engine = BacktestEngine(df, symbol="TEST", config=config, inference=SellEveryBar())
+        result = engine.run()
+        shorts = result.trades[result.trades["direction"] == -1]
+        assert len(shorts) > 0
+        entry_bars = shorts["entry_bar"].astype(int).to_numpy()
+        assert (shorts["entry_price"].to_numpy() <= raw_open[entry_bars]).all()

@@ -10,7 +10,7 @@ Examples:
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Tuple, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 import MetaTrader5 as mt5
 
 
@@ -232,7 +232,7 @@ class LeadLagDetector:
             Dictionary of relationships: {(leader, follower): relationship_info}
         """
         print(f"\n{'='*60}")
-        print(f"🔗 UPDATING LEAD-LAG RELATIONSHIPS")
+        print("🔗 UPDATING LEAD-LAG RELATIONSHIPS")
         print(f"{'='*60}")
 
         timeframe = mt5.TIMEFRAME_M5
@@ -330,7 +330,7 @@ class LeadLagDetector:
             return
 
         print(f"\n{'='*60}")
-        print(f"🔗 LEAD-LAG RELATIONSHIPS SUMMARY")
+        print("🔗 LEAD-LAG RELATIONSHIPS SUMMARY")
         print(f"{'='*60}")
 
         for (leader, follower), info in self.relationships.items():

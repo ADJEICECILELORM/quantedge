@@ -1,9 +1,7 @@
-import json
 import os
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from models.registry import load_metadata, save_metadata
 from utils.drift_monitor import FeatureDriftMonitor, compute_psi, summarize_feature_distribution

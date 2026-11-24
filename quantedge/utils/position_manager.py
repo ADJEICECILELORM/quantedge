@@ -92,7 +92,7 @@ class PositionManager:
             position = mt5.positions_get(ticket=ticket)
             if position is None or len(position) == 0:
                 # Trade was closed - get the deal history to calculate P&L
-                from datetime import datetime, timedelta
+                from datetime import datetime
 
                 # Get deals for this ticket
                 deals = mt5.history_deals_get(ticket=ticket)

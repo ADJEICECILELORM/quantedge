@@ -48,7 +48,7 @@ def generate_daily_report(journal, config=None, equity=None, now=None) -> str:
             if ts >= day_start:
                 recent.append({**t, "ts_dt": ts})
 
-    lines = [f"# QuantEdge Daily Risk Report", f"", f"**Date (UTC):** {now:%Y-%m-%d %H:%M}"]
+    lines = ["# QuantEdge Daily Risk Report", "", f"**Date (UTC):** {now:%Y-%m-%d %H:%M}"]
 
     if equity is not None:
         lines.append(f"**Equity:** ${equity:,.2f}")

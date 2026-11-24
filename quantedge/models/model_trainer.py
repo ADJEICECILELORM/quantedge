@@ -1,11 +1,8 @@
 # models/model_trainer.py
-import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-import xgboost as xgb
 import joblib
 import os
 
@@ -55,7 +52,8 @@ class ModelTrainer:
         print(f"RF Accuracy: {metrics['rf_accuracy']:.4f}")
 
         print("--- Training XGBoost ---")
-        xgb_clf = xgb.XGBClassifier(n_estimators=200, learning_rate=0.05, max_depth=6, use_label_encoder=False, eval_metric='logloss')
+        from models.advanced_model_trainer import MulticlassLabelXGB
+        xgb_clf = MulticlassLabelXGB(n_estimators=200, learning_rate=0.05, max_depth=6, use_label_encoder=False, eval_metric='logloss')
         xgb_clf.fit(X_train, y_train)
         self.models['xgb'] = xgb_clf
         metrics['xgb_accuracy'] = float(xgb_clf.score(X_test, y_test))

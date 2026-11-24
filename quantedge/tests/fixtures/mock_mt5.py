@@ -1,8 +1,7 @@
 # tests/fixtures/mock_mt5.py - Mock MT5 Connector for Testing
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
-import MetaTrader5 as mt5
+from datetime import datetime
 
 
 class MockMT5Connector:

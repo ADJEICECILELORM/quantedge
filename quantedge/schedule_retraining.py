@@ -19,9 +19,18 @@ def scheduled_retrain_job(symbol: str = "EURUSD", bars: int = 10000):
     Job to run on schedule.
     """
     print(f"\n{'='*80}")
-    print(f"SCHEDULED RETRAINING TRIGGERED")
+    print("SCHEDULED RETRAINING TRIGGERED")
     print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"{'='*80}\n")
+
+    try:
+        from utils.retrain_trigger import check_flag
+        flag = check_flag("models/saved")
+        if flag:
+            print(f">> Drift retrain flag active (raised {flag.get('raised_at')}): {flag.get('reason')}")
+            print(">> This run should replace the drifted champion model\n")
+    except Exception:
+        pass
 
     try:
         success = retrain_models(
@@ -53,7 +62,7 @@ def run_scheduler(interval: str = "daily", time_str: str = "02:00", symbol: str 
         symbol: Symbol to retrain on
     """
     print(f"\n{'='*80}")
-    print(f"QUANTEDGE V5 - SCHEDULED RETRAINING SERVICE")
+    print("QUANTEDGE V5 - SCHEDULED RETRAINING SERVICE")
     print(f"{'='*80}")
     print(f"Interval: {interval}")
     print(f"Time: {time_str}")

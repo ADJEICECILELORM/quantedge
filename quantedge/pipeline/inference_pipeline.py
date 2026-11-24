@@ -2,7 +2,7 @@
 import joblib
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Optional, Tuple
+from typing import Dict
 import logging
 import os
 
@@ -178,16 +178,30 @@ class InferencePipeline:
             for name, model in self.models.items():
                 try:
                     proba = model.predict_proba(X_scaled)[0]
-
-                    # Ensure we have 2 classes (short/long)
-                    if len(proba) < 2:
+                    classes = getattr(model, "classes_", None)
+                    if classes is None or len(proba) < 2:
                         logger.error(f"Model {name} returned invalid probability shape")
                         continue
 
+                    # Map probabilities to label classes; supports legacy
+                    # binary models (classes [0, 1]) and 3-class models
+                    # (classes [-1, 0, 1]) without code changes elsewhere.
+                    p_map = {int(c): float(p) for c, p in zip(classes, proba)}
+                    prob_long = p_map.get(1, 0.0)
+                    if -1 in p_map:
+                        prob_short = p_map[-1]
+                    elif 0 in p_map and len(p_map) == 2:
+                        prob_short = p_map[0]
+                    else:
+                        prob_short = 0.0
+
+                    pred_class = int(classes[int(np.argmax(proba))])
+                    vote = pred_class if pred_class in (1, -1) else 0
+
                     predictions[name] = {
-                        'prob_long': float(proba[1]),
-                        'prob_short': float(proba[0]),
-                        'vote': 1 if proba[1] > 0.5 else -1,
+                        'prob_long': prob_long,
+                        'prob_short': prob_short,
+                        'vote': vote,
                         'confidence': float(max(proba))
                     }
                 except Exception as e:
@@ -204,28 +218,32 @@ class InferencePipeline:
                 logger.error("All model predictions failed")
                 return {'direction': 0, 'confidence': 0.5, 'model_votes': {}}
 
-            # Calculate weighted scores
+            # Soft voting: weighted average of directional probabilities.
+            # Works for 2-class and 3-class models alike; scores stay on a
+            # 0-1 scale so min_confidence gates remain interpretable.
+            total_weight = sum(self.weights.get(name, 0) for name in predictions) or 1.0
+
             score_long = sum(
-                p['prob_long'] * p['confidence'] * self.weights.get(name, 0)
+                p['prob_long'] * self.weights.get(name, 0)
                 for name, p in predictions.items()
-                if p['vote'] == 1
-            )
+            ) / total_weight
 
             score_short = sum(
-                p['prob_short'] * p['confidence'] * self.weights.get(name, 0)
+                p['prob_short'] * self.weights.get(name, 0)
                 for name, p in predictions.items()
-                if p['vote'] == -1
-            )
+            ) / total_weight
 
-            total_weight = sum(self.weights.values())
-
-            # Determine final direction and confidence
+            # Determine final direction and confidence.
+            # A perfect tie means no directional edge -> stay flat.
             if score_long > score_short:
                 direction = 1
-                confidence = score_long / total_weight
-            else:
+                confidence = score_long
+            elif score_short > score_long:
                 direction = -1
-                confidence = score_short / total_weight
+                confidence = score_short
+            else:
+                direction = 0
+                confidence = max(score_long, score_short)
 
             self.prediction_count += 1
 
@@ -237,6 +255,18 @@ class InferencePipeline:
                     if self.prediction_count % 100 == 0:
                         drift = self.drift_monitor.check()
                         if drift["status"] == "violation":
+                            try:
+                                from utils.retrain_trigger import raise_flag
+                                flag = raise_flag(
+                                    self.model_dir,
+                                    detail={
+                                        "max_psi_adjusted": drift["max_psi_adjusted"],
+                                        "worst_features": drift["psi"][:5],
+                                    },
+                                )
+                                logger.error(f"Retrain flag raised: {flag}")
+                            except Exception as flag_err:
+                                logger.warning(f"Could not raise retrain flag: {flag_err}")
                             logger.error(
                                 f"FEATURE DRIFT VIOLATION: max PSI {drift['max_psi']:.3f} - "
                                 f"model is trading on a regime it never trained on. "

@@ -19,7 +19,7 @@ Determine how quickly news impact fades and when to exit positions.
 import logging
 import numpy as np
 from typing import Dict, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from rag.data_schemas import NewsFeatures
 

@@ -1,6 +1,5 @@
 # features/nlp_sentiment.py - NLP Bag-of-Words for BTC-ETH Correlation
 import pandas as pd
-import numpy as np
 from collections import Counter
 from typing import List, Dict
 

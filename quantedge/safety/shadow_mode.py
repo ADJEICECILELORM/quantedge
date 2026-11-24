@@ -18,9 +18,8 @@ How it works:
 import logging
 import json
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List
 from datetime import datetime, timezone
-from dataclasses import asdict
 
 from rag.data_schemas import ProposedTrade
 

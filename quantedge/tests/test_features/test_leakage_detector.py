@@ -16,7 +16,6 @@ accuracy up and fail this test.
 """
 import numpy as np
 import pandas as pd
-import pytest
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 

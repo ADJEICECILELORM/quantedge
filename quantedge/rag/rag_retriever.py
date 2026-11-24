@@ -1,11 +1,10 @@
 # rag/rag_retriever.py - RAG Intelligence Layer with Vector Database
 import logging
-from typing import List, Optional, Dict
-from datetime import datetime, timezone, timedelta
+from typing import List, Dict
+from datetime import datetime, timezone
 import numpy as np
-import os
 
-from rag.data_schemas import StructuredNewsEvent, NewsFeatures, EventType
+from rag.data_schemas import StructuredNewsEvent
 
 logger = logging.getLogger(__name__)
 

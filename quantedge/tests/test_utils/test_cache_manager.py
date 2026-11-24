@@ -1,5 +1,4 @@
 # tests/test_utils/test_cache_manager.py
-import pytest
 import time
 from utils.cache_manager import TTLCache, CacheManager
 

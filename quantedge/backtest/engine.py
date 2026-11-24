@@ -44,10 +44,13 @@ class BacktestEngine:
     causal: rolling/shift/ewm on past data only), and one row at a time is
     fed to the same InferencePipeline used live. Fills are modeled with
     spread, slippage and per-lot commission. Entries happen at the NEXT
-    bar's open so no bar trades on its own close.
+    bar's open so no bar trades on its own close. Longs buy at ask
+    (open + spread + slippage) and shorts sell at bid (open - spread -
+    slippage); stop and take-profit checks are direction-aware.
 
     Notional model: position_size_usd of risk per trade, converted to asset
-    units of (risk_amount / sl_distance). PnL = units * (exit - entry).
+    units of (risk_amount / sl_distance). PnL = units * (exit - entry) *
+    direction.
     """
 
     def __init__(
@@ -116,10 +119,19 @@ class BacktestEngine:
         open_trade: Optional[Trade] = None
         trades: list = []
         stopped = False
+        current_day = None
 
         for i in range(self.warmup_bars, n - 1):
             bar = features.iloc[i]
             next_bar = features.iloc[i + 1]
+
+            bar_day = bar["time"].date() if "time" in features.columns else None
+            if bar_day is not None and bar_day != current_day:
+                current_day = bar_day
+                if stopped:
+                    stopped = False
+                guard.reset_daily(equity)
+
             equity_curve[i] = equity + self._unrealized_pnl(open_trade, i, bar)
 
             if open_trade is not None:
@@ -142,17 +154,20 @@ class BacktestEngine:
                 direction = prediction.get("direction", 0)
                 confidence = float(prediction.get("confidence", 0.5))
 
-                if direction != 1 or confidence < self.min_confidence:
+                if direction == 0 or confidence < self.min_confidence:
                     continue
 
                 atr = bar.get("atr_14")
                 if atr is None or not np.isfinite(atr) or atr <= 0:
                     continue
 
-                entry_price = float(next_bar["open"])
-                spread = self.spread_fraction * entry_price
-                slip = self.slippage_fraction * entry_price
-                entry_price = entry_price + spread + slip
+                raw_price = float(next_bar["open"])
+                spread = self.spread_fraction * raw_price
+                slip = self.slippage_fraction * raw_price
+                if direction == 1:
+                    entry_price = raw_price + spread + slip
+                else:
+                    entry_price = raw_price - spread - slip
 
                 sl_distance = atr * self.atr_sl_multiple
                 units = (equity * self.risk_per_trade) / sl_distance
@@ -165,9 +180,17 @@ class BacktestEngine:
                     exit_bar=None,
                     entry_price=entry_price,
                     exit_price=None,
-                    direction=1,
-                    stop_loss=entry_price - sl_distance,
-                    take_profit=entry_price + atr * self.atr_tp_multiple,
+                    direction=int(direction),
+                    stop_loss=(
+                        entry_price - sl_distance
+                        if direction == 1
+                        else entry_price + sl_distance
+                    ),
+                    take_profit=(
+                        entry_price + atr * self.atr_tp_multiple
+                        if direction == 1
+                        else entry_price - atr * self.atr_tp_multiple
+                    ),
                     units=units,
                 )
 
@@ -197,10 +220,16 @@ class BacktestEngine:
     def _check_exit(trade: Trade, bar) -> tuple:
         low = float(bar["low"])
         high = float(bar["high"])
-        if low <= trade.stop_loss:
-            return True, trade.stop_loss, "sl"
-        if high >= trade.take_profit:
-            return True, trade.take_profit, "tp"
+        if trade.direction == 1:
+            if low <= trade.stop_loss:
+                return True, trade.stop_loss, "sl"
+            if high >= trade.take_profit:
+                return True, trade.take_profit, "tp"
+        else:
+            if high >= trade.stop_loss:
+                return True, trade.stop_loss, "sl"
+            if low <= trade.take_profit:
+                return True, trade.take_profit, "tp"
         return False, None, ""
 
     @staticmethod
@@ -208,9 +237,9 @@ class BacktestEngine:
         if trade is None or bar_index < trade.entry_bar:
             return 0.0
         close = float(bar["close"])
-        return float(trade.units * (close - trade.entry_price))
+        return float(trade.units * (close - trade.entry_price) * trade.direction)
 
     def _pnl(self, trade: Trade) -> float:
         if trade.exit_price is None:
             return 0.0
-        return float(trade.units * (trade.exit_price - trade.entry_price))
+        return float(trade.units * (trade.exit_price - trade.entry_price) * trade.direction)

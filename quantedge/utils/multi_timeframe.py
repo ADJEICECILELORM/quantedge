@@ -2,10 +2,8 @@
 import MetaTrader5 as mt5
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Optional
-import time
+from typing import Dict
 import logging
-from functools import lru_cache
 
 # Import cache manager
 try:

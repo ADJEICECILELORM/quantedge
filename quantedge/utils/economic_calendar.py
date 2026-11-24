@@ -1,7 +1,6 @@
 # utils/economic_calendar.py - Economic Calendar Integration
 from datetime import datetime, timedelta
 from typing import List, Dict
-import json
 
 class EconomicCalendar:
     """

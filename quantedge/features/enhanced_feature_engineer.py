@@ -11,7 +11,6 @@ Enhanced feature engineering that includes:
 import pandas as pd
 import numpy as np
 import ta
-from datetime import datetime
 from typing import Dict, Optional
 
 

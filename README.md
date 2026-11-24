@@ -40,6 +40,17 @@ python run_backtest.py --mt5 --symbol EURUSD --start 2024-01-01 --end 2025-01-01
 ```
 Always retrain first (`python retrain_models.py`) so `models/saved/metadata.json` exists — inference validates live feature columns against training metadata and refuses to predict on mismatched feature sets.
 
+### Real data without MT5
+
+No MT5 terminal needed to download history:
+```bash
+cd quantedge
+python utils/download_history.py --symbol EURUSD=X --interval 5m --range 60d --out data/EURUSD_M5_60d.csv
+python retrain_models.py
+python run_backtest.py --csv data/EURUSD_M5_60d.csv
+```
+Yahoo FX bars carry zero tick volume, so volume-derived features are auto-dropped as degenerate (>50% NaN) instead of poisoning the feature matrix.
+
 Every backtest also prints a robustness report: Monte Carlo bootstrap of the trade sequence (max-drawdown distribution, P(ruin), P(profit)) plus the Probabilistic Sharpe Ratio with a `real edge` / `NOT distinguishable from luck` verdict.
 
 ### Portfolio backtest (multi-symbol)

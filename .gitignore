@@ -24,8 +24,10 @@ quantedge/logs/
 quantedge/backtest_results/
 
 # Model artifacts (regenerate via retrain_models.py)
-quantedge/models/saved/*.pkl
-quantedge/models/saved/*.joblib
+quantedge/models/saved/
+quantedge/models/backup/
+quantedge/models/challenger/
+quantedge/models/performance/
 quantedge/data/
 
 # IDE / OS

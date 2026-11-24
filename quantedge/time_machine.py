@@ -1,5 +1,5 @@
 # time_machine.py - Session Filter (The Time Machine)
-from datetime import datetime, timedelta, time as dt_time
+from datetime import datetime, timedelta
 
 
 class TimeMachine:

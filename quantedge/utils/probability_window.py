@@ -5,8 +5,7 @@ to identify high-probability trading windows.
 """
 
 import pandas as pd
-import numpy as np
-from datetime import datetime, time, timedelta
+from datetime import datetime, time
 from typing import Dict, List, Optional
 import json
 import os
@@ -334,14 +333,14 @@ class ProbabilityWindow:
             current_time = datetime.now()
 
         print(f"\n{'='*60}")
-        print(f"⏰ PROBABILITY WINDOW ANALYSIS")
+        print("⏰ PROBABILITY WINDOW ANALYSIS")
         print(f"{'='*60}")
         print(f"Sample Size: {len(self.trade_history)} trades")
 
         # Best hours
         best_hours = self.get_best_trading_hours(top_n=5)
         if best_hours:
-            print(f"\n🕐 BEST TRADING HOURS:")
+            print("\n🕐 BEST TRADING HOURS:")
             for h in best_hours:
                 print(f"   {h['hour']:02d}:00 - Win Rate: {h['win_rate']*100:.1f}% "
                       f"({h['total_trades']} trades)")
@@ -349,14 +348,14 @@ class ProbabilityWindow:
         # Best days
         best_days = self.get_best_trading_days()
         if best_days:
-            print(f"\n📅 BEST TRADING DAYS:")
+            print("\n📅 BEST TRADING DAYS:")
             for d in best_days:
                 print(f"   {d['day_name']}: {d['win_rate']*100:.1f}% ({d['total_trades']} trades)")
 
         # Best sessions
         best_sessions = self.get_best_sessions()
         if best_sessions:
-            print(f"\n🌍 BEST TRADING SESSIONS:")
+            print("\n🌍 BEST TRADING SESSIONS:")
             for s in best_sessions:
                 print(f"   {s['session']}: {s['win_rate']*100:.1f}% ({s['total_trades']} trades)")
 

@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.1 - 2026-11
+- Three-class labels (`features/label_generator.py`): targets are now
+  {-1, 0, 1} behind a symmetric ATR dead-band; trainer, walk-forward and
+  `MulticlassLabelXGB` (signed-label XGBoost adapter) all support it, and
+  the backtest engine gained a short leg (bid fills, direction-aware
+  SL/TP/PnL)
+- Inference ensemble switched to soft voting: weighted directional
+  probabilities with an explicit flat tie-out (previously 3-class scores
+  collapsed under the `prob * confidence` product and the bot stopped
+  trading entirely)
+- Real-data gate without MT5: `utils/download_history.py` pulls OHLCV
+  from Yahoo Finance for any symbol/interval/range; 60-day EURUSD M5
+  run trained, walked forward and backtested end-to-end on real prices
+- Trade cost analysis (`utils/execution_quality.py`): JSONL fill log
+  with direction-aware slippage stats and a compare-to-backtest verdict;
+  wired into the live execution path
+- Auto-retrain trigger (`utils/retrain_trigger.py`): drift violations
+  raise a flag file the scheduler consumes and `save_models` clears
+- Bug fixes found on the real-data run: `bot.py` called a nonexistent
+  `execute_order` on the live path (order executor rewritten around a
+  dict contract); `DrawdownGuard` never reset, turning the daily loss
+  limit into a permanent stop (now resets each new trading day in both
+  the backtest loop and the live loop, and exposes `current_drawdown`
+  for drawdown-adjusted sizing); degenerate columns (>50% NaN) are
+  dropped instead of silently purging rows
+- Lint: 116 ruff auto-fixes (unused imports, dead f-strings)
+
 ## 2.0 - 2026-11
 - Champion/challenger model governance (`models/championship.py`):
   `retrain_models.py --challenger` trains into `models/challenger`;
