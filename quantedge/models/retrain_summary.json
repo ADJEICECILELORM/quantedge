@@ -1,0 +1,71 @@
+{
+  "generated_at": "2026-11-24T16:18:58.296191+00:00",
+  "results": [
+    {
+      "symbol": "EURUSD",
+      "rows_total": 3904,
+      "rows_trained": 3595,
+      "last_data_date": "2026-11-24",
+      "artifact_dir": "models/artifacts/EURUSD",
+      "drift": {
+        "max_psi": 3.983949403606395,
+        "worst_feature": "sma_50",
+        "features_checked": 47
+      },
+      "oos": {
+        "bars": 273,
+        "trades": 9,
+        "end_equity": 11442.064250477068,
+        "total_pnl": 1456.7205425876375,
+        "win_rate": 0.6666666666666666,
+        "return_pct": 14.567205425876375,
+        "psr": 0.9251816940943431,
+        "verdict": "noise-adjacent - review manually"
+      }
+    },
+    {
+      "symbol": "GBPUSD",
+      "rows_total": 3905,
+      "rows_trained": 3594,
+      "last_data_date": "2026-11-24",
+      "artifact_dir": "models/artifacts/GBPUSD",
+      "drift": {
+        "max_psi": 4.849126592162976,
+        "worst_feature": "sma_50",
+        "features_checked": 47
+      },
+      "oos": {
+        "bars": 273,
+        "trades": 5,
+        "end_equity": 9525.40887589949,
+        "total_pnl": -468.8834148035921,
+        "win_rate": 0.2,
+        "return_pct": -4.688834148035921,
+        "psr": 0.24702389502810046,
+        "verdict": "below chance - do not deploy"
+      }
+    },
+    {
+      "symbol": "USDJPY",
+      "rows_total": 3905,
+      "rows_trained": 3595,
+      "last_data_date": "2026-11-24",
+      "artifact_dir": "models/artifacts/USDJPY",
+      "drift": {
+        "max_psi": 5.517917975364825,
+        "worst_feature": "sma_20",
+        "features_checked": 47
+      },
+      "oos": {
+        "bars": 273,
+        "trades": 11,
+        "end_equity": 10559.403709133905,
+        "total_pnl": 559.5310828068247,
+        "win_rate": 0.45454545454545453,
+        "return_pct": 5.595310828068246,
+        "psr": 0.7207075322162896,
+        "verdict": "noise-adjacent - review manually"
+      }
+    }
+  ]
+}
