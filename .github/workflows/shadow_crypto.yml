@@ -1,0 +1,88 @@
+# .github/workflows/shadow_crypto.yml
+# 72-hour shadow-mode paper trading experiment for the 3-asset crypto
+# momentum basket (BTC, ETH, SOL; price_vs_sma50 long-short, crypto
+# cost calibration). Hourly tick, state persisted on the shadow-crypto
+# branch. After the deadline the tick finalizes the report and disables itself.
+name: shadow-crypto
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - shadow-crypto
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: shadow-crypto
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: shadow-crypto
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install numpy pandas scikit-learn xgboost ta joblib
+      - name: Shadow tick
+        run: |
+          cd quantedge
+          python shadow/shadow_run.py --deadline-hours 72 \
+            --state-dir shadow-crypto \
+            --symbols BTC-USD ETH-USD SOL-USD \
+            --feature price_vs_sma50 \
+            --spread-fraction 0.0008 \
+            --slippage-fraction 0.0004 \
+            --commission-per-lot 0.0
+      - name: Commit state
+        run: |
+          git config user.name "quantedge-shadow-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -f quantedge/shadow-crypto/
+          git diff --cached --quiet && echo "no state change" && exit 0
+          git commit -m "shadow: $(date -u +%FT%TZ)"
+          git push
+      - name: Bootstrap next tick (cron-independent chain)
+        if: success()
+        continue-on-error: true
+        run: |
+          cd quantedge
+          if grep -q '"finalized": true' shadow-crypto/state.json 2>/dev/null; then
+            echo "experiment finalized; chain stops"
+            exit 0
+          fi
+          now=$(date +%s)
+          next=$(( (now / 3600 + 1) * 3600 + 30 ))
+          wait=$(( next - now ))
+          echo "sleeping ${wait}s until next hour"
+          sleep "$wait"
+          curl -sS -f -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/shadow_crypto.yml/dispatches \
+            -d '{"ref":"shadow-crypto"}' \
+            && echo "next tick dispatched"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Disable workflow after deadline
+        if: failure() || always()
+        continue-on-error: true
+        run: |
+          cd quantedge
+          if grep -q '"finalized": true' shadow-crypto/state.json 2>/dev/null; then
+            gh workflow disable shadow-crypto.yml || true
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}

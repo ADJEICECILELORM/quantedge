@@ -49,3 +49,6 @@ Thumbs.db
 .env
 .env.*
 quantedge/config.local.json
+quantedge/shadow-crypto/state.json
+quantedge/shadow-crypto/journal.jsonl
+quantedge/shadow-crypto/shadow_report.md

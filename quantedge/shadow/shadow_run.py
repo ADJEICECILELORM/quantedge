@@ -33,6 +33,10 @@ YAHOO_SYMBOLS = {
     "USDJPY": "USDJPY=X",
 }
 
+# Runtime basket (mutated by main() from CLI args); defaults to the FX basket
+SYMBOL_MAP = dict(YAHOO_SYMBOLS)
+SIGNAL_FEATURE = "sma_cross"
+
 INCOMPLETE_GRACE_MINUTES = 60  # a daily bar younger than this is treated as in-progress
 
 
@@ -81,7 +85,7 @@ def evaluate_signal(symbol: str, now):
     """Return signal + sizing inputs for one pair on its latest completed
     daily bar, or None on fetch/feature failure."""
     try:
-        df = fetch_yahoo_ohlcv(YAHOO_SYMBOLS[symbol], interval="1d", range_="180d")
+        df = fetch_yahoo_ohlcv(SYMBOL_MAP[symbol], interval="1d", range_="180d")
     except Exception as e:
         print(f"[{symbol}] fetch failed: {e}")
         return None
@@ -97,7 +101,7 @@ def evaluate_signal(symbol: str, now):
     if len(feats) == 0:
         return None
     row = feats.iloc[-1]
-    signal = FeatureSignMomentum(feature="sma_cross", confidence=0.9).predict(feats.iloc[[-1]])
+    signal = FeatureSignMomentum(feature=SIGNAL_FEATURE, confidence=0.9).predict(feats.iloc[[-1]])
     atr = row.get("atr_14")
     atr_ok = _finite_positive(atr)
     return {
@@ -129,7 +133,7 @@ def close_position(symbol: str, position: dict, price: dict, equity: float, cfg,
 
 
 def tick(state: dict, cfg, state_path: str, journal_path: str, now) -> dict:
-    for symbol in sorted(YAHOO_SYMBOLS):
+    for symbol in sorted(SYMBOL_MAP):
         signal = evaluate_signal(symbol, now)
         if signal is None:
             continue
@@ -208,7 +212,7 @@ def finalize(state: dict, cfg, journal_path: str, report_path: str, state_path: 
         "# Shadow experiment report",
         "",
         f"Started: {state.get('started_at')} | Ended: {now.isoformat()}",
-        f"Deadline: {state.get('deadline_hours')}h | Basket: {', '.join(sorted(YAHOO_SYMBOLS))}",
+        f"Deadline: {state.get('deadline_hours')}h | Basket: {', '.join(sorted(SYMBOL_MAP))}",
         "",
         f"- Start equity: ${start_equity:,.2f}",
         f"- End equity:   ${state['equity']:,.2f}",
@@ -221,7 +225,7 @@ def finalize(state: dict, cfg, journal_path: str, report_path: str, state_path: 
         lines.append("- No closed trades")
     lines += [
         "",
-        "This was a 72-hour paper run of the SMA20/50 momentum basket.",
+        f"This was a 72-hour paper run of the {state.get('feature', SIGNAL_FEATURE)} momentum basket.",
         "Three days is evidence of operability, NOT of profitability -",
         "see CHANGELOG for the 15-year statistical verdict.",
     ]
@@ -240,16 +244,36 @@ def main():
     parser.add_argument("--state-dir", default=os.path.join(os.path.dirname(os.path.abspath(__file__))))
     parser.add_argument("--deadline-hours", type=float, default=72.0)
     parser.add_argument("--report", default=None)
+    parser.add_argument("--symbols", nargs="+", default=None,
+                        help="Yahoo symbol ids (e.g. BTC-USD ETH-USD); default FX basket")
+    parser.add_argument("--feature", default=None,
+                        help="FeatureSignMomentum feature (default sma_cross)")
+    parser.add_argument("--spread-fraction", type=float, default=None)
+    parser.add_argument("--slippage-fraction", type=float, default=None)
+    parser.add_argument("--commission-per-lot", type=float, default=None)
     args = parser.parse_args()
+
+    global SYMBOL_MAP, SIGNAL_FEATURE
+    if args.symbols:
+        SYMBOL_MAP = {s.strip().upper(): s.strip() for s in args.symbols}
+    if args.feature:
+        SIGNAL_FEATURE = args.feature
 
     os.makedirs(args.state_dir, exist_ok=True)
     state_path = os.path.join(args.state_dir, "state.json")
     journal_path = os.path.join(args.state_dir, "journal.jsonl")
     report_path = args.report or os.path.join(args.state_dir, "shadow_report.md")
 
+    cfg = load_config()
+    if args.spread_fraction is not None:
+        cfg["backtest"]["spread_fraction"] = args.spread_fraction
+    if args.slippage_fraction is not None:
+        cfg["backtest"]["slippage_fraction"] = args.slippage_fraction
+    if args.commission_per_lot is not None:
+        cfg["backtest"]["commission_per_lot_usd"] = args.commission_per_lot
+
     state = _load_state(state_path)
     now = _now()
-    cfg = load_config()
 
     started_raw = state.get("started_at")
     if not state:
@@ -262,6 +286,8 @@ def main():
             "positions": {},
             "signals": {},
             "finalized": False,
+            "symbols": sorted(SYMBOL_MAP),
+            "feature": SIGNAL_FEATURE,
         }
         _save_state(state_path, state)
         print(f"Initialized shadow experiment (deadline {args.deadline_hours}h)")

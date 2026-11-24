@@ -174,3 +174,32 @@ class TestMainLifecycle:
         monkeypatch.setattr(shadow_run, "evaluate_signal", boom)
         monkeypatch.setattr(sys, "argv", ["shadow_run.py", "--state-dir", str(tmp_path)])
         assert shadow_run.main() == 0
+
+    def test_cli_symbol_and_cost_overrides(self, cfg, tmp_path, monkeypatch):
+        seen = []
+
+        def fake_eval(symbol, now):
+            seen.append(symbol)
+            return None
+
+        monkeypatch.setattr(shadow_run, "evaluate_signal", fake_eval)
+        monkeypatch.setattr(sys, "argv", [
+            "shadow_run.py", "--state-dir", str(tmp_path / "sc"),
+            "--symbols", "BTC-USD", "ETH-USD",
+            "--feature", "price_vs_sma50",
+            "--spread-fraction", "0.0008",
+            "--slippage-fraction", "0.0004",
+            "--commission-per-lot", "0.0",
+        ])
+        old_map = dict(shadow_run.SYMBOL_MAP)
+        old_feat = shadow_run.SIGNAL_FEATURE
+        try:
+            assert shadow_run.main() == 0
+            state = shadow_run._load_state(str(tmp_path / "sc" / "state.json"))
+            assert sorted(state["symbols"]) == ["BTC-USD", "ETH-USD"]
+            assert state["feature"] == "price_vs_sma50"
+            assert set(shadow_run.SYMBOL_MAP) == {"BTC-USD", "ETH-USD"}
+            assert set(seen) <= {"BTC-USD", "ETH-USD"}
+        finally:
+            shadow_run.SYMBOL_MAP = old_map
+            shadow_run.SIGNAL_FEATURE = old_feat
