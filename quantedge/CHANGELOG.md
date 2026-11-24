@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.6 - 2026-11
+- Portfolio validation of the momentum basket:
+  - 4-pair (EUR/GBP/JPY/AUD vs USD), 15y daily: +54.9% combined,
+    Sharpe 0.29, PF 1.16, maxDD 25.2%, PSR 0.869, bootstrap P(ruin)
+    21.6% - improved on single-pair but still below the 0.95 proof bar
+  - 7-pair basket (adds CAD, CHF, NZD): -8.5% combined. USDCAD -1.8%,
+    USDCHF -27.8%, NZDUSD -33.8% - 3 of 4 added pairs lose; the
+    momentum effect is pair-specific (3/7 winners), not a general FX
+    premium. Diversification does not rescue it
+  - Exposure-cap check correctly flagged peak concurrent gross $56.5k
+    vs $20k cap - live multi-symbol deployment needs per-symbol equity
+    splits (risk parity) before anything else
+
 ## 2.5 - 2026-11
 - Rule-based strategies module (`backtest/strategies.py`):
   `FeatureSignMomentum` trades the sign of a trend feature
