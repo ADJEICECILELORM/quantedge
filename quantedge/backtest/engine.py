@@ -85,9 +85,15 @@ class BacktestEngine:
         if self.inference is not None:
             return self.inference
         from pipeline.inference_pipeline import InferencePipeline
-        if InferencePipeline._models_loaded:
-            return InferencePipeline()
-        return None
+        try:
+            pipeline = InferencePipeline()
+        except Exception as e:
+            logger.warning(f"No trained models found ({e}) - engine runs with a neutral stub (no trades)")
+            return None
+        if not getattr(pipeline, "models", None):
+            logger.warning("InferencePipeline has no models - engine runs with a neutral stub (no trades)")
+            return None
+        return pipeline
 
     @staticmethod
     def _stub_predict(row_df):

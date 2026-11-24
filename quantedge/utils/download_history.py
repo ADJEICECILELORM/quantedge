@@ -54,7 +54,7 @@ def fetch_yahoo_ohlcv(symbol: str = "EURUSD=X", interval: str = "5m", range_: st
 def main():
     parser = argparse.ArgumentParser(description="Download OHLCV history from Yahoo Finance")
     parser.add_argument("--symbol", default="EURUSD=X")
-    parser.add_argument("--interval", default="5m", choices=["1m", "2m", "5m", "15m", "30m", "60m", "1d"])
+    parser.add_argument("--interval", default="5m", choices=["1m", "2m", "5m", "15m", "30m", "60m", "1h", "1d"])
     parser.add_argument("--range", dest="range_", default="60d")
     parser.add_argument("--out", default="data/history.csv")
     args = parser.parse_args()

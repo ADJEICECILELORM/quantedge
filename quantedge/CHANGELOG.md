@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.2 - 2026-11
+- Bug: `BacktestEngine._get_inference` only returned models if something
+  else had already instantiated `InferencePipeline` in the same process;
+  fresh backtests silently ran a no-trade stub. The engine now loads
+  models itself and clearly reports the fallback
+- Bug: drift check read a nonexistent `max_psi` key (monitor returns
+  `max_psi_adjusted`), killing the drift evaluation every 100 predictions
+- `utils/download_history.py` accepts `1h`; 2-year H1 validation run
+  documented (OOS +19.9%, Sharpe 2.31, PSR 0.898 - promising, not yet
+  statistically conclusive)
+
 ## 2.1 - 2026-11
 - Three-class labels (`features/label_generator.py`): targets are now
   {-1, 0, 1} behind a symmetric ATR dead-band; trainer, walk-forward and

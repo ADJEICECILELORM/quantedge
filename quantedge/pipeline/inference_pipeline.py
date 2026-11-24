@@ -268,13 +268,13 @@ class InferencePipeline:
                             except Exception as flag_err:
                                 logger.warning(f"Could not raise retrain flag: {flag_err}")
                             logger.error(
-                                f"FEATURE DRIFT VIOLATION: max PSI {drift['max_psi']:.3f} - "
+                                f"FEATURE DRIFT VIOLATION: max PSI {drift['max_psi_adjusted']:.3f} - "
                                 f"model is trading on a regime it never trained on. "
                                 f"Worst: {drift['psi'][:5]}"
                             )
                         elif drift["status"] == "warning":
                             logger.warning(
-                                f"Feature drift warning: max PSI {drift['max_psi']:.3f}"
+                                f"Feature drift warning: max PSI {drift['max_psi_adjusted']:.3f}"
                             )
                         return_dict_drift = drift["status"]
                 except Exception as e:
