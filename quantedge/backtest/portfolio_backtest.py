@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 
 from backtest.engine import BacktestEngine
-from backtest.metrics import compute_metrics, format_report
+from backtest.metrics import compute_metrics, format_report, infer_bars_per_year
 from backtest.validation import format_robustness_report, robustness_report
 from utils.config import load_config
 
@@ -72,7 +72,7 @@ class PortfolioBacktest:
 
         bt_cfg = self.config["backtest"]
         metrics = compute_metrics(
-            combined_equity, combined_trades, bt_cfg.get("bars_per_year", 28800)
+            combined_equity, combined_trades, infer_bars_per_year(combined_equity.index)
         )
         metrics["symbols"] = ",".join(per_symbol.keys())
 

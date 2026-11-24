@@ -9,7 +9,7 @@ import pandas as pd
 from features.feature_engineer import FeatureEngineer
 from risk.drawdown_guard import DrawdownGuard
 from utils.config import load_config
-from backtest.metrics import compute_metrics
+from backtest.metrics import compute_metrics, infer_bars_per_year
 
 logger = logging.getLogger(__name__)
 
@@ -217,7 +217,9 @@ class BacktestEngine:
             equity_curve=equity_series,
             trades=trades_df,
             metrics=compute_metrics(
-                equity_series, trades_df, self.bt_cfg.get("bars_per_year", 28800)
+                equity_series,
+                trades_df,
+                infer_bars_per_year(features["time"]),
             ),
             initial_equity=self.initial_equity,
         )

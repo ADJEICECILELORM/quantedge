@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.3 - 2026-11
+- Bug: Sharpe/Sortino annualization used a hardcoded `bars_per_year`
+  (28800) regardless of timeframe, inflating daily-bar Sharpe ~10x;
+  `infer_bars_per_year` now derives the factor from actual bar spacing
+  in both the backtest engine and portfolio backtest
+- Cross-pair validation (2024-2026 H1): EURUSD holds (+19.9%, PSR 0.90),
+  GBPUSD marginal (+2.6%, PSR 0.66), AUDUSD flat (-10.4%, PSR 0.68,
+  47% max DD), USDJPY loses (-22.0%, PSR 0.22) - the EURUSD edge does
+  NOT yet generalize; multi-year daily EURUSD (2011-2026) at +24.4%
+  OOS / PSR 0.91 with per-trade annualization
+
 ## 2.2 - 2026-11
 - Bug: `BacktestEngine._get_inference` only returned models if something
   else had already instantiated `InferencePipeline` in the same process;

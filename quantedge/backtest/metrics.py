@@ -11,6 +11,19 @@ def max_drawdown_pct(equity: pd.Series) -> float:
     return float(abs(drawdown.min()) * 100)
 
 
+def infer_bars_per_year(times) -> int:
+    """
+    Annualization factor implied by the actual bar spacing, so Sharpe/Sortino
+    stay comparable across M5/H1/D1 datasets instead of trusting one
+    hardcoded config value.
+    """
+    t = pd.Series(times)
+    span = (t.iloc[-1] - t.iloc[0]).total_seconds() / (365.25 * 86400.0)
+    if span <= 0:
+        return 28800
+    return max(1, int(round(len(t) / span)))
+
+
 def compute_metrics(equity: pd.Series, trades: pd.DataFrame, bars_per_year: int = 28800) -> dict:
     if len(equity) < 2 or equity.iloc[0] == 0:
         return {}
