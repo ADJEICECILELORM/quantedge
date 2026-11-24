@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.8 - 2026-11
+- GitHub-hosted retraining (`utils/retrain_job.py` +
+  `.github/workflows/retrain_models.yml`): weekly scheduled job pulls
+  fresh 15y daily data from Yahoo, retrains challenger models per pair,
+  measures feature drift (max PSI vs the training window), and runs a
+  1-year OOS engine validation with a PSR verdict. Models are kept as
+  workflow artifacts and the report archived on the `model-artifacts`
+  branch. Promotion remains a manual championship decision.
+  Measured: 3y retrain 1.4s, 15y retrain 2.3s, HP search ~35s - the
+  full 7-pair job finishes in minutes, well inside the 6h Actions cap.
+  Live smoke run: EURUSD 9 OOS trades +14.6% (PSR 0.925,
+  noise-adjacent), GBPUSD 5 trades -4.7% (PSR 0.247, do not deploy).
+  `InferencePipeline` model dir now overridable via `QUANTEDGE_MODEL_DIR`
+
 ## 2.7 - 2026-11
 - 72-hour shadow paper-trading experiment (`shadow/shadow_run.py` +
   `.github/workflows/shadow_momentum.yml`): hourly GitHub Actions tick

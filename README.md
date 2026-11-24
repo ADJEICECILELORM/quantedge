@@ -106,6 +106,15 @@ gh workflow run shadow-momentum.yml --repo ADJEICECILELORM/quantedge
 ```
 An hourly job fetches daily Yahoo data for EURUSD/GBPUSD/USDJPY, applies the validated SMA20/50 momentum signal to the latest completed bar, and journals notional trades to the `shadow-trading` branch. After 72 hours it finalizes `quantedge/shadow/shadow_report.md` and disables itself. Paper trades only - no broker, no live capital.
 
+## Model retraining (GitHub Actions, weekly)
+
+```bash
+gh workflow run retrain-models.yml --repo ADJEICECILELORM/quantedge
+# or manually
+cd quantedge && python utils/retrain_job.py --pairs EURUSD,GBPUSD,USDJPY
+```
+A weekly job (`retrain-models.yml`) pulls fresh 15y daily Yahoo data, retrains the challenger models per pair, measures feature drift (max PSI), and runs a 1-year out-of-sample engine validation with a PSR verdict. Model artifacts are attached to the workflow run and the report archived on the `model-artifacts` branch. Promotion to champion is manual (`models/championship.py`) - a challenger only graduates past the PSR >= 0.95 proof bar.
+
 ## Note
 
 `rag/news_ingestion.py` currently returns mock economic-calendar events.

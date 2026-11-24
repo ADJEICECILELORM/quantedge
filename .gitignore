@@ -28,11 +28,15 @@ quantedge/logs/
 *.log
 quantedge/backtest_results/
 
-# Model artifacts (regenerate via retrain_models.py)
+# Model artifacts (regenerate via utils/retrain_job.py)
 quantedge/models/saved/
 quantedge/models/backup/
 quantedge/models/challenger/
 quantedge/models/performance/
+quantedge/models/artifacts/
+quantedge/models/scratch_timing/
+quantedge/models/retrain_report.md
+quantedge/models/retrain_summary.json
 quantedge/data/
 
 # IDE / OS

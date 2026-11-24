@@ -48,7 +48,7 @@ class InferencePipeline:
         print("Loading Models...")
         try:
             # Check if model files exist
-            model_dir = "models/saved"
+            model_dir = os.environ.get("QUANTEDGE_MODEL_DIR", "models/saved")
             self.model_dir = model_dir
             required_files = ['scaler.pkl', 'rf_model.pkl', 'xgb_model.pkl', 'lr_model.pkl']
 

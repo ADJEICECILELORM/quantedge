@@ -1,0 +1,63 @@
+# .github/workflows/retrain_models.yml
+# Weekly challenger retraining plus drift check and OOS gate report.
+# Models are saved as workflow artifacts and the report is archived on
+# the model-artifacts branch. Promotion stays manual (championship.py).
+name: retrain-models
+
+on:
+  schedule:
+    - cron: "5 4 * * 0"
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/retrain_models.yml"
+      - "quantedge/utils/retrain_job.py"
+      - "quantedge/pipeline/inference_pipeline.py"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: retrain-models
+  cancel-in-progress: false
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install numpy pandas scikit-learn xgboost ta joblib
+      - name: Retrain challengers
+        run: |
+          cd quantedge
+          python utils/retrain_job.py
+      - name: Upload model artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-artifacts
+          path: quantedge/models/
+          retention-days: 90
+      - name: Commit report to model-artifacts branch
+        run: |
+          git config user.name "quantedge-retrain-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin model-artifacts >/dev/null 2>&1; then
+            git fetch origin model-artifacts --quiet
+            git checkout -b model-artifacts origin/model-artifacts
+          else
+            git checkout --orphan model-artifacts
+            git rm -rf --cached . >/dev/null 2>&1 || true
+          fi
+          git add -f quantedge/models/retrain_report.md quantedge/models/retrain_summary.json quantedge/models/artifacts/
+          git diff --cached --quiet && echo "no report change" && exit 0
+          git commit -m "model retrain: $(date -u +%FT%TZ)"
+          git push -u origin model-artifacts
