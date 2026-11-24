@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: retrain-models
@@ -61,3 +62,20 @@ jobs:
           git diff --cached --quiet && echo "no report change" && exit 0
           git commit -m "model retrain: $(date -u +%FT%TZ)"
           git push -u origin model-artifacts
+      - name: Alert on failure
+        if: failure()
+        continue-on-error: true
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          TITLE="[quantedge-alert] retrain-models failure"
+          gh label create quantedge-alert --color D93F0B --description "autonomous chain failures" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+          EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title retrain-models" --json number --jq '.[0].number' 2>/dev/null || true)
+          BODY="Retrain failed at $(date -u +%FT%TZ). Run: $RUN_URL (event ${{ github.event_name }})"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --repo "$GITHUB_REPOSITORY" --body "$BODY"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body "$BODY" --label quantedge-alert
+          fi
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}

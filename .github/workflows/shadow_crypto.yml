@@ -16,6 +16,7 @@ on:
 permissions:
   contents: write
   actions: write
+  issues: write
 
 concurrency:
   group: shadow-crypto
@@ -54,6 +55,33 @@ jobs:
           git diff --cached --quiet && echo "no state change" && exit 0
           git commit -m "shadow: $(date -u +%FT%TZ)"
           git push
+      - name: Alert and recover on failure
+        if: failure()
+        continue-on-error: true
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          TITLE="[quantedge-alert] shadow-crypto chain failure"
+          gh label create quantedge-alert --color D93F0B --description "autonomous chain failures" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+          EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title shadow-crypto" --json number --jq '.[0].number' 2>/dev/null || true)
+          BODY="Chain failure at $(date -u +%FT%TZ). Run: $RUN_URL (event ${{ github.event_name }})"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --repo "$GITHUB_REPOSITORY" --body "$BODY"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body "$BODY" --label quantedge-alert
+          fi
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "push" ]; then
+            curl -sS -f -X POST \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/$GITHUB_REPOSITORY/actions/workflows/shadow_crypto.yml/dispatches \
+              -d '{{"ref":"shadow-crypto"}}' \
+              && echo "recovery tick dispatched" || echo "re-dispatch failed; hourly cron remains the safety net"
+          else
+            echo "manual run failure: re-dispatch skipped"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
       - name: Bootstrap next tick (cron-independent chain)
         if: success()
         continue-on-error: true

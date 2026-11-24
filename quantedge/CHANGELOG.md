@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.12 - 2026-11
+- Chain failure alerting: shadow-momentum, shadow-crypto and the weekly
+  retrain workflow now open/update a `quantedge-alert` GitHub issue on
+  any failed run, and the two shadow chains additionally re-dispatch one
+  recovery tick (schedule/push-triggered runs only, so a failing manual
+  run cannot loop). The retry cap plus the hourly cron safety net bounds
+  failure cascades.
+- Broker scaffolding for the live-money path: broker-agnostic
+  BrokerAdapter (BrokerOrder / Position / AccountInfo), a rebalance
+  helper that diffs target weights against current positions, and an
+  Alpaca paper-trading adapter on stdlib urllib. It is inert until
+  ALPACA_API_KEY_ID / ALPACA_API_SECRET_KEY are set in the environment,
+  defaults to the paper endpoint, retries transient failures with
+  backoff, and never logs or persists keys. 19 new tests; suite 196
+  passed.
+
 ## 2.11 - 2026-11
 - Funding-cost audit of the crypto-3 validated result: replayed actual
   Binance USDT-M perpetual funding history (BTCUSDT 7,898 events from
