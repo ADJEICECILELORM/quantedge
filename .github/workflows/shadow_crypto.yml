@@ -9,6 +9,10 @@ on:
   schedule:
     - cron: "0 * * * *"
   workflow_dispatch:
+    inputs:
+      deadline_hours:
+        description: "Experiment deadline in hours (720 = 30d longrun)"
+        default: "72"
   push:
     branches:
       - shadow-crypto
@@ -40,7 +44,7 @@ jobs:
       - name: Shadow tick
         run: |
           cd quantedge
-          python shadow/shadow_run.py --deadline-hours 72 \
+          python shadow/shadow_run.py --deadline-hours "${{ inputs.deadline_hours || '72' }}" \
             --state-dir shadow-crypto \
             --symbols BTC-USD ETH-USD SOL-USD \
             --feature price_vs_sma50 \
@@ -87,9 +91,30 @@ jobs:
         continue-on-error: true
         run: |
           cd quantedge
-          if grep -q '"finalized": true' shadow-crypto/state.json 2>/dev/null; then
-            echo "experiment finalized; chain stops"
-            exit 0
+          FINALIZED=$(python3 -c "import json; print(json.load(open('shadow-crypto/state.json')).get('finalized'))" 2>/dev/null || echo None)
+          DEADLINE=$(python3 -c "import json; print(json.load(open('shadow-crypto/state.json')).get('deadline_hours', 72))" 2>/dev/null || echo 72)
+          INPUTS='{}'
+          if [ "$FINALIZED" = "True" ]; then
+            if [ "$DEADLINE" = "72" ]; then
+              TS=$(date -u +%Y%m%dT%H%M%SZ)
+              mkdir -p shadow-crypto/archive/$TS
+              for f in state.json journal.jsonl shadow_report.md; do
+                if [ -f "shadow-crypto/$f" ]; then
+                  git mv "shadow-crypto/$f" "shadow-crypto/archive/$TS/$f" 2>/dev/null || \
+                    mv "shadow-crypto/$f" "shadow-crypto/archive/$TS/$f"
+                fi
+              done
+              git config user.name "quantedge-shadow-bot"
+              git config user.email "actions@users.noreply.github.com"
+              git add -A shadow-crypto
+              git diff --cached --quiet || git commit -m "archive 72h shadow run ($TS); auto-launching 30d longrun"
+              git push
+              INPUTS='{"deadline_hours":"720"}'
+              echo "72h run archived; 30d longrun armed"
+            else
+              echo "30d longrun finalized; chain stops"
+              exit 0
+            fi
           fi
           now=$(date +%s)
           next=$(( (now / 3600 + 1) * 3600 + 30 ))
@@ -100,7 +125,7 @@ jobs:
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/${{ github.repository }}/actions/workflows/shadow_crypto.yml/dispatches \
-            -d '{"ref":"shadow-crypto"}' \
+            -d "{\"ref\":\"shadow-crypto\",\"inputs\":$INPUTS}" \
             && echo "next tick dispatched"
         env:
           GITHUB_TOKEN: ${{ github.token }}

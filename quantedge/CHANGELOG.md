@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.14 - 2026-11
+- Pre-registered shadow grading thresholds (docs/SHADOW_EXPECTATIONS.md,
+  fixed 2026-11-25 BEFORE any chain finalizes): crypto-72h graded on
+  n_trades <= 5, PnL >= -$1000, equity-journal integrity <= $1 (crypto
+  commission is 0, so the integrity check is tight); FX-72h on n_trades
+  <= 30, PnL >= -$1,200, integrity <= $30 (open commissions unjournaled);
+  win rate/PF explicitly NOT graded below ~20 trades. Threshold edits
+  after results are forbidden.
+- Crypto chain auto-respawn: on 72h finalization the chain archives the
+  run under shadow-crypto/archive/<ts>/ and re-dispatches itself with
+  deadline_hours=720 (30d longrun); the longrun's finalization stops the
+  chain and disables the workflow. FX chain finalizes and stops - it is
+  below the validation bar and does not earn a 30d extension.
+- Capital-preservation profile measured (crypto-3, full span, sliced
+  portfolios): 2% risk -> +688%/maxDD 15.5%/P(ruin) 0.08%; 1% risk ->
+  +191%/8.3%/~0; 0.5% -> +73%/4.2%/~0. Deployment profile = 1% (nearly
+  full Sharpe, ruin probability removed at simulation level). Documented
+  in PLAYBOOK gate 5 with the regime-risk caveat.
+- compare_report.py: added --expect-trades-max.
+
 ## 2.13 - 2026-11
 - Operational finish line while the shadow chains run:
   - `shadow/compare_report.py`: mechanical shadow-vs-backtest grading.

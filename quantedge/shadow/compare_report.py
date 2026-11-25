@@ -134,6 +134,7 @@ def main(argv=None):
     parser.add_argument("--journal", required=True, help="path to journal.jsonl")
     parser.add_argument("--expect-finalized", type=str, default="true")
     parser.add_argument("--expect-trades-min", type=int, default=None)
+    parser.add_argument("--expect-trades-max", type=int, default=None)
     parser.add_argument("--expect-pnl-min", type=float, default=None)
     parser.add_argument("--expect-pnl-max", type=float, default=None)
     parser.add_argument("--expect-win-rate-min", type=float, default=None)
@@ -152,6 +153,7 @@ def main(argv=None):
     expectations = {"finalized": ("is", args.expect_finalized == "true")}
     for flag, (name, op) in {
         "expect_trades_min": ("n_trades", "min"),
+        "expect_trades_max": ("n_trades", "max"),
         "expect_pnl_min": ("pnl_usd", "min"),
         "expect_pnl_max": ("pnl_usd", "max"),
         "expect_win_rate_min": ("win_rate_pct", "min"),

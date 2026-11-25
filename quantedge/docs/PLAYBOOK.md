@@ -79,7 +79,11 @@ seeing the shadow numbers first - write them down before fetching.
 
 A 72h run measures **operability** (signals fire, fills book, state
 persists, chain survives), NOT profitability. Only the long-horizon
-backtests establish edge.
+backtests establish edge. The crypto chain auto-respawns into a 30d
+longrun after its 72h finalization (archive + re-dispatch with
+`deadline_hours=720`); grading thresholds for both runs live in
+`docs/SHADOW_EXPECTATIONS.md` and are pre-registered - never edited
+after results exist.
 
 ## 5. Go-live checklist (sequential gates; no skips)
 
@@ -100,6 +104,10 @@ backtests establish edge.
    (`execution/alpaca.py`) against the paper endpoint for >= 1 week
    with production-size orders. Alpaca paper does not cover perpetual
    funding settlement; treat as execution smoke test only.
+
+   **Capital-preservation profile (measured 2026-11-25)** - crypto-3
+   portfolio over the full backtest span, per-symbol equity slices,
+   Monte Carlo ruin estimate (P of -50% drawdown):
 5. **Decision point (human)**: move to real money ONLY with money you
    can lose entirely, in a subaccount, with a kill switch (below).
    Crypto perpetual trading needs a venue account the USER creates;
@@ -110,6 +118,18 @@ backtests establish edge.
    after 100 closed trades despite positive backtest expectation;
    two consecutive failed retrain gates; venue changes fee/funding
    structure materially.
+
+   | risk_per_trade | 12y return | maxDD | Sharpe | P(ruin) |
+   |---|---|---|---|---|
+   | 2.0% (backtest default) | +688% | 15.5% | 1.38 | 0.08% |
+   | 1.0% (deployment profile) | +191% | 8.3% | 1.32 | ~0 |
+   | 0.5% (ultra-conservative) | +73% | 4.2% | 1.26 | ~0 |
+
+   Caveat: these Monte Carlo probabilities are computed on the
+   historical path - they quantify variance, not regime risk. The
+   deployment profile is 1%: it keeps Sharpe nearly intact while
+   removing essentially all simulation-level ruin probability and
+   halving live drawdowns.
 
 ## 6. Non-negotiables
 
