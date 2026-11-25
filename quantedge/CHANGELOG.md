@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.13 - 2026-11
+- Operational finish line while the shadow chains run:
+  - `shadow/compare_report.py`: mechanical shadow-vs-backtest grading.
+    Reads a finalized state.json + journal.jsonl, computes realized
+    stats (trades, PnL, win rate, PF, longest losing streak,
+    per-symbol split, trades/day, state-vs-journal equity integrity
+    check) and grades each against pre-registered CLI thresholds;
+    exit code 2 on any failure so a chain report can never silently
+    count as deployment evidence. 10 tests.
+  - `docs/PLAYBOOK.md`: full operations runbook - system map,
+    monitoring cadence, alert semantics, chain-dead recovery, state
+    branch race procedure, shadow grading protocol (thresholds are
+    pre-registered, never tuned after seeing results), the 6-gate
+    go-live checklist, and mechanical kill criteria.
+
 ## 2.12 - 2026-11
 - Chain failure alerting: shadow-momentum, shadow-crypto and the weekly
   retrain workflow now open/update a `quantedge-alert` GitHub issue on
