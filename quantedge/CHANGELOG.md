@@ -1,5 +1,96 @@
 # Changelog
 
+## 2.14 - 2026-11
+- Pre-registered shadow grading thresholds (docs/SHADOW_EXPECTATIONS.md,
+  fixed 2026-11-25 BEFORE any chain finalizes): crypto-72h graded on
+  n_trades <= 5, PnL >= -$1000, equity-journal integrity <= $1 (crypto
+  commission is 0, so the integrity check is tight); FX-72h on n_trades
+  <= 30, PnL >= -$1,200, integrity <= $30 (open commissions unjournaled);
+  win rate/PF explicitly NOT graded below ~20 trades. Threshold edits
+  after results are forbidden.
+- Crypto chain auto-respawn: on 72h finalization the chain archives the
+  run under shadow-crypto/archive/<ts>/ and re-dispatches itself with
+  deadline_hours=720 (30d longrun); the longrun's finalization stops the
+  chain and disables the workflow. FX chain finalizes and stops - it is
+  below the validation bar and does not earn a 30d extension.
+- Capital-preservation profile measured (crypto-3, full span, sliced
+  portfolios): 2% risk -> +688%/maxDD 15.5%/P(ruin) 0.08%; 1% risk ->
+  +191%/8.3%/~0; 0.5% -> +73%/4.2%/~0. Deployment profile = 1% (nearly
+  full Sharpe, ruin probability removed at simulation level). Documented
+  in PLAYBOOK gate 5 with the regime-risk caveat.
+- compare_report.py: added --expect-trades-max.
+
+## 2.13 - 2026-11
+- Operational finish line while the shadow chains run:
+  - `shadow/compare_report.py`: mechanical shadow-vs-backtest grading.
+    Reads a finalized state.json + journal.jsonl, computes realized
+    stats (trades, PnL, win rate, PF, longest losing streak,
+    per-symbol split, trades/day, state-vs-journal equity integrity
+    check) and grades each against pre-registered CLI thresholds;
+    exit code 2 on any failure so a chain report can never silently
+    count as deployment evidence. 10 tests.
+  - `docs/PLAYBOOK.md`: full operations runbook - system map,
+    monitoring cadence, alert semantics, chain-dead recovery, state
+    branch race procedure, shadow grading protocol (thresholds are
+    pre-registered, never tuned after seeing results), the 6-gate
+    go-live checklist, and mechanical kill criteria.
+
+## 2.12 - 2026-11
+- Chain failure alerting: shadow-momentum, shadow-crypto and the weekly
+  retrain workflow now open/update a `quantedge-alert` GitHub issue on
+  any failed run, and the two shadow chains additionally re-dispatch one
+  recovery tick (schedule/push-triggered runs only, so a failing manual
+  run cannot loop). The retry cap plus the hourly cron safety net bounds
+  failure cascades.
+- Broker scaffolding for the live-money path: broker-agnostic
+  BrokerAdapter (BrokerOrder / Position / AccountInfo), a rebalance
+  helper that diffs target weights against current positions, and an
+  Alpaca paper-trading adapter on stdlib urllib. It is inert until
+  ALPACA_API_KEY_ID / ALPACA_API_SECRET_KEY are set in the environment,
+  defaults to the paper endpoint, retries transient failures with
+  backoff, and never logs or persists keys. 19 new tests; suite 196
+  passed.
+
+## 2.11 - 2026-11
+- Funding-cost audit of the crypto-3 validated result: replayed actual
+  Binance USDT-M perpetual funding history (BTCUSDT 7,898 events from
+  2019-09, ETHUSDT 7,664 from 2019-11, SOLUSDT 6,865 from 2020-09;
+  mean +1.1bp/day BTC, +1.3bp/day ETH, +0.4bp/day SOL) against every
+  trade's holding days. **Verdict: edge survives essentially intact.**
+  Pooled PnL $205,778 -> $203,258 (-1.2%), PSR unchanged at 1.0000,
+  max drawdown marginally better (-58.6% -> -58.3% isolated-run
+  aggregation). Positive funding means shorts EARN on average; the
+  small net drag comes from the long leg dominating PnL. The "shorts'
+  funding not yet modeled" caveat from 2.9 is closed.
+- Portfolio exposure-cap fix: each symbol's engine now sizes off an
+  equal slice of starting equity (initial_equity / n_symbols) instead
+  of the full account, so combined concurrent notional scales like a
+  single-symbol deployment. FX 7-pair portfolio now fully inside the
+  $20k cap (previously breached). Crypto-3 portfolio peak down from
+  ~$63k to $21,059 - a residual 5% breach driven purely by the BTC
+  slice compounding ~14x over 12y; live deployment should equalize
+  sub-account slices periodically (documented, not hidden). 2 new
+  portfolio tests (cap respected at start, position notional scales
+  1/N with symbol count); suite 177 passed.
+
+## 2.10 - 2026-11
+- Cross-sectional altcoin rotation backtest (the "trade small coins and
+  rotate into majors" idea, made systematic): Binance liquid universe
+  (top 40 by historical median daily quote volume, 526-pair candidate
+  pool, tokenized-stock and leveraged tokens excluded, per-coin
+  listing history tracked), weekly Monday rebalance, rank by 30/60/90d return
+  (raw + vol-adjusted), top 5/10, equal + inverse-vol weights, cash or
+  BTC/ETH majors fallback, 10bp/side costs.
+  **VERDICT: killed. Max drawdown -83% to -97% in ALL 24 configs;
+  CAGR anywhere from -12% to +19%; lb=60-family configs NEGATIVE while
+  lb=30 positive (parameter fragility); year-by-year lottery profile
+  (+819% 2021, -77% 2022, +258% 2023, -66% 2025, -67% 2026); BTC
+  buy-and-hold on the same span beat every config on Sharpe (0.88);
+  DSR across 24 trials max 0.855 < 0.95.** Cross-sectional chasing of
+  what pumped is exit-liquidity trading; the crypto edge that survived
+  validation is time-series momentum on majors, not alt rotation.
+
+
 ## 2.9 - 2026-11
 - Multi-asset validation of the same daily momentum framework (price_vs_sma50
   / sma_cross, flip-exit, 3-ATR stop; crypto costs 12bp/side, ETF costs
