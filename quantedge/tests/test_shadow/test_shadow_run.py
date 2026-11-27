@@ -203,3 +203,46 @@ class TestMainLifecycle:
         finally:
             shadow_run.SYMBOL_MAP = old_map
             shadow_run.SIGNAL_FEATURE = old_feat
+
+
+class TestMarkToMarket:
+    def test_marks_open_position_on_new_bar(self, cfg, tmp_path, monkeypatch):
+        journal = str(tmp_path / "journal.jsonl")
+        state = fresh_state()
+        monkeypatch.setattr(shadow_run, "evaluate_signal",
+                            fake_signal_for({"EURUSD": {"direction": 1, "price": 1.10,
+                                                        "bar_time": "b1", "atr": 0.01}}))
+        state = shadow_run.tick(state, cfg, str(tmp_path), journal, datetime.now(timezone.utc))
+        entry = state["positions"]["EURUSD"]["entry_price"]
+
+        monkeypatch.setattr(shadow_run, "evaluate_signal",
+                            fake_signal_for({"EURUSD": {"direction": 1, "price": 1.12,
+                                                        "bar_time": "b2", "atr": 0.01}}))
+        state = shadow_run.tick(state, cfg, str(tmp_path), journal, datetime.now(timezone.utc))
+        units = state["positions"]["EURUSD"]["units"]
+        expected = round((1.12 - entry) * units * 1, 2)
+        assert state["unrealized"] == expected
+        assert state["marked_equity"] == round(state["equity"] + expected, 2)
+
+    def test_marks_use_recorded_signal_when_no_new_bar(self, cfg, tmp_path, monkeypatch):
+        journal = str(tmp_path / "journal.jsonl")
+        state = fresh_state()
+        sig = {"direction": 1, "price": 1.10, "bar_time": "b1", "atr": 0.01}
+        monkeypatch.setattr(shadow_run, "evaluate_signal", fake_signal_for({"EURUSD": sig}))
+        state = shadow_run.tick(state, cfg, str(tmp_path), journal, datetime.now(timezone.utc))
+        entry = state["positions"]["EURUSD"]["entry_price"]
+        units = state["positions"]["EURUSD"]["units"]
+        monkeypatch.setattr(shadow_run, "evaluate_signal",
+                            fake_signal_for({"EURUSD": dict(sig, price=1.20)}))
+        state = shadow_run.tick(state, cfg, str(tmp_path), journal, datetime.now(timezone.utc))
+        assert state["signals"]["EURUSD"]["price"] == 1.20
+        assert state["unrealized"] == round((1.20 - entry) * units, 2)
+
+    def test_flat_book_marks_zero(self, cfg, tmp_path, monkeypatch):
+        monkeypatch.setattr(shadow_run, "evaluate_signal",
+                            fake_signal_for({"EURUSD": {"direction": 0, "price": 1.10,
+                                                        "bar_time": "b1", "atr": 0.01}}))
+        state = shadow_run.tick(fresh_state(), cfg, str(tmp_path),
+                                str(tmp_path / "journal.jsonl"), datetime.now(timezone.utc))
+        assert state["unrealized"] == 0.0
+        assert state["marked_equity"] == state["equity"]

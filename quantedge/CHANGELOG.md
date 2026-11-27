@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.15 - 2026-11
+
+- Shadow runner: mark-to-market for open positions. `state["unrealized"]`
+  and `state["marked_equity"]` are now recorded every tick (marks use the
+  last completed bar per pair; recorded signals refresh on every fetch even
+  between daily bars). Realized `equity` semantics are UNTOUCHED - closes
+  remain the only thing that moves it, so the running 72h experiments and
+  their Gate 2 grading are unaffected. Applies from the next experiment
+  (crypto 30d longrun) once state branches are synced after finalize.
+- Shadow chain health audit (Nov 26): both chains green hourly; state-branch
+  "stalls" diagnosed as by-design daily-bar behavior, not failures.
+- Tests: 208 passed, 1 skipped (3 new MTM tests).
+
 ## 2.14 - 2026-11
 - Pre-registered shadow grading thresholds (docs/SHADOW_EXPECTATIONS.md,
   fixed 2026-11-25 BEFORE any chain finalizes): crypto-72h graded on
