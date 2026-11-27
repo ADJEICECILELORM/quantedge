@@ -66,8 +66,42 @@ python shadow/compare_report.py \
 The crypto chain auto-respawns into a 720h (30d) longrun: on 72h
 finalization the chain archives the run under
 `shadow-crypto/archive/<timestamp>/` and re-dispatches itself with
-`deadline_hours=720`. Expected longrun trades: ~3.5 (0.116/day x 30d).
-The longrun is graded with SEPARATE pre-registrations to be written
-here on its start date. FX chain finalizes and stops - it is not
+`deadline_hours=720`. FX chain finalizes and stops - it is not
 promoted (below validation bar) and a 30d extension would burn compute
 on pretending otherwise.
+
+## Chain 2L: crypto-3 momentum, 30-day longrun (shadow-crypto branch)
+
+**Registered: 2026-11-27 ~10:30 UTC, BEFORE the 72h chain finalized and
+BEFORE the longrun respawned (~18:02 UTC Nov 27 expected).** Written
+without knowledge of the 72h run's outcome.
+
+Window ~18:02 UTC Nov 27 -> ~18:02 UTC Dec 27 (720h). Same engine,
+same config as Chain 2. Expected longrun trades: ~3.5 (0.116/day x 30d).
+
+Expectations:
+- finalized == true (required)
+- n_trades: 0-15 (expected ~3.5; bound ~4x expected, generous sanity margin)
+- pnl_usd >= -1,500 (-15%; ceiling matched to the backtest-window maxDD of
+  15.5% rather than the 3-day -12% operability bound used for Chain 2)
+- equity_discrepancy_usd <= 1.00 (commission is 0; same reconciliation
+  requirement as Chain 2)
+- marked_equity_usd >= -1,500 (additive MTM reporting on this chain; the
+  marked floor equals the realized floor - a mark breaching it while
+  realized equity holds signals either an engine bug or a stop breach)
+- win rate / PF: NOT graded (~4 trades is statistically meaningless)
+
+Command (at finalize, from quantedge/ after fetching state files; state
+and journal live under shadow-crypto/ on the branch, archive under
+shadow-crypto/archive/<timestamp>/):
+```
+python shadow/compare_report.py \
+  --state shadow-crypto/state.json --journal shadow-crypto/journal.jsonl \
+  --expect-trades-max 15 --expect-pnl-min -1500 \
+  --expect-equity-diff-max 1.0
+```
+
+Mid-run checkpoints (weekly, advisory only, no gate effect): the state
+must still show finalized == false, equity within the -1,500 floor, and
+the hourly run chain green. A missed-commit gap > 24h with runs still
+succeeding is the known daily-bar no-change behavior, not a fault.
