@@ -1,3 +1,6 @@
 {"type": "open", "symbol": "BTC-USD", "direction": -1, "entry_price": 61137.53119375, "units": 0.04372263895812654, "bar_time": "2026-11-23 00:00:00", "ts": "2026-11-24T17:02:40.387180+00:00"}
 {"type": "open", "symbol": "ETH-USD", "direction": -1, "entry_price": 1706.8006967773438, "units": 1.193554679891165, "bar_time": "2026-11-23 00:00:00", "ts": "2026-11-24T17:02:40.656663+00:00"}
 {"type": "open", "symbol": "SOL-USD", "direction": -1, "entry_price": 71.89541810913086, "units": 28.89115981138951, "bar_time": "2026-11-23 00:00:00", "ts": "2026-11-24T17:02:40.897634+00:00"}
+{"type": "close", "symbol": "BTC-USD", "direction": -1, "entry_price": 61137.53119375, "exit_price": 60494.7109375, "units": 0.04372263895812654, "pnl_usd": 28.11, "reason": "experiment_end", "ts": "2026-11-27T18:01:05.101414+00:00"}
+{"type": "close", "symbol": "ETH-USD", "direction": -1, "entry_price": 1706.8006967773438, "exit_price": 1687.7418212890625, "units": 1.193554679891165, "pnl_usd": 22.75, "reason": "experiment_end", "ts": "2026-11-27T18:01:05.242429+00:00"}
+{"type": "close", "symbol": "SOL-USD", "direction": -1, "entry_price": 71.89541810913086, "exit_price": 70.9327621459961, "units": 28.89115981138951, "pnl_usd": 27.81, "reason": "experiment_end", "ts": "2026-11-27T18:01:05.422809+00:00"}
