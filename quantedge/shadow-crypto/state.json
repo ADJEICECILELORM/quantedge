@@ -1,0 +1,55 @@
+{
+  "started_at": "2026-11-27T18:15:40.870501+00:00",
+  "deadline_hours": 720.0,
+  "start_equity": 10000.0,
+  "equity": 10000.0,
+  "positions": {
+    "BTC-USD": {
+      "direction": -1,
+      "entry_price": 60422.117284375,
+      "units": 0.04565673453455216,
+      "entry_ts": "2026-11-27T18:15:40.962570+00:00",
+      "entry_bar": "2026-11-26 00:00:00"
+    },
+    "ETH-USD": {
+      "direction": -1,
+      "entry_price": 1685.7165311035155,
+      "units": 1.293677991499308,
+      "entry_ts": "2026-11-27T18:15:41.048399+00:00",
+      "entry_bar": "2026-11-26 00:00:00"
+    },
+    "SOL-USD": {
+      "direction": -1,
+      "entry_price": 70.8476428314209,
+      "units": 30.39126181787762,
+      "entry_ts": "2026-11-27T18:15:41.144502+00:00",
+      "entry_bar": "2026-11-26 00:00:00"
+    }
+  },
+  "signals": {
+    "BTC-USD": {
+      "direction": -1,
+      "price": 60494.7109375,
+      "bar_time": "2026-11-26 00:00:00"
+    },
+    "ETH-USD": {
+      "direction": -1,
+      "price": 1687.7418212890625,
+      "bar_time": "2026-11-26 00:00:00"
+    },
+    "SOL-USD": {
+      "direction": -1,
+      "price": 70.9327621459961,
+      "bar_time": "2026-11-26 00:00:00"
+    }
+  },
+  "finalized": false,
+  "symbols": [
+    "BTC-USD",
+    "ETH-USD",
+    "SOL-USD"
+  ],
+  "feature": "price_vs_sma50",
+  "unrealized": -8.52,
+  "marked_equity": 9991.48
+}
