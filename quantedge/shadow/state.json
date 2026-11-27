@@ -2,30 +2,8 @@
   "started_at": "2026-11-24T12:13:38.139403+00:00",
   "deadline_hours": 72.0,
   "start_equity": 10000.0,
-  "equity": 9956.2899990927,
-  "positions": {
-    "EURUSD": {
-      "direction": -1,
-      "entry_price": 1.0970760284721852,
-      "units": 18390.044638165407,
-      "entry_ts": "2026-11-24T12:13:38.360287+00:00",
-      "entry_bar": "2026-11-23 00:00:00"
-    },
-    "USDJPY": {
-      "direction": 1,
-      "entry_price": 158.94212492584228,
-      "units": 140.84133878649007,
-      "entry_ts": "2026-11-24T12:13:38.784172+00:00",
-      "entry_bar": "2026-11-23 00:00:00"
-    },
-    "GBPUSD": {
-      "direction": -1,
-      "entry_price": 1.303383779064417,
-      "units": 15066.018216520912,
-      "entry_ts": "2026-11-25T01:01:00.995051+00:00",
-      "entry_bar": "2026-11-24 00:00:00"
-    }
-  },
+  "equity": 9874.295445369084,
+  "positions": {},
   "signals": {
     "EURUSD": {
       "direction": -1,
@@ -43,5 +21,6 @@
       "bar_time": "2026-11-26 00:00:00"
     }
   },
-  "finalized": false
+  "finalized": true,
+  "finalized_at": "2026-11-27T13:01:08.420559+00:00"
 }

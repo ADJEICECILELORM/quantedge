@@ -7,3 +7,6 @@
 {"type": "open", "symbol": "GBPUSD", "direction": 1, "entry_price": 1.3095577862095833, "units": 15191.98326235135, "bar_time": "2026-11-23 00:00:00", "ts": "2026-11-25T00:01:00.695283+00:00"}
 {"type": "close", "symbol": "GBPUSD", "direction": 1, "entry_price": 1.3095577862095833, "exit_price": 1.303475022315979, "units": 15191.98326235135, "pnl_usd": -93.47, "reason": "signal_flip", "ts": "2026-11-25T01:01:00.994921+00:00"}
 {"type": "open", "symbol": "GBPUSD", "direction": -1, "entry_price": 1.303383779064417, "units": 15066.018216520912, "bar_time": "2026-11-24 00:00:00", "ts": "2026-11-25T01:01:00.995055+00:00"}
+{"type": "close", "symbol": "EURUSD", "direction": -1, "entry_price": 1.0970760284721852, "exit_price": 1.097008466720581, "units": 18390.044638165407, "pnl_usd": -0.04, "reason": "experiment_end", "ts": "2026-11-27T13:01:08.522781+00:00"}
+{"type": "close", "symbol": "USDJPY", "direction": 1, "entry_price": 158.94212492584228, "exit_price": 159.21499633789062, "units": 140.84133878649007, "pnl_usd": 38.42, "reason": "experiment_end", "ts": "2026-11-27T13:01:08.618817+00:00"}
+{"type": "close", "symbol": "GBPUSD", "direction": -1, "entry_price": 1.303383779064417, "exit_price": 1.3113033771514893, "units": 15066.018216520912, "pnl_usd": -120.37, "reason": "experiment_end", "ts": "2026-11-27T13:01:08.711832+00:00"}
