@@ -41,10 +41,25 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install numpy pandas scikit-learn xgboost ta joblib
+      - name: Resolve deadline
+        # Robust deadline resolution: explicit dispatch input wins; otherwise
+        # the state file's deadline (as INT — the 72.0-float/string compare
+        # bug broke the 2026-11-27 auto-respawn); no state yet (fresh chain
+        # after archive) -> 720 for the 30d longrun.
+        run: |
+          cd quantedge
+          if [ -n "${{ inputs.deadline_hours }}" ]; then
+            echo "DEADLINE=${{ inputs.deadline_hours }}" >> "$GITHUB_ENV"
+          elif [ -f shadow-crypto/state.json ]; then
+            echo "DEADLINE=$(python3 -c "import json; print(int(json.load(open('shadow-crypto/state.json')).get('deadline_hours', 72)))")" >> "$GITHUB_ENV"
+          else
+            echo "DEADLINE=720" >> "$GITHUB_ENV"
+          fi
+          echo "resolved deadline: $DEADLINE h"
       - name: Shadow tick
         run: |
           cd quantedge
-          python shadow/shadow_run.py --deadline-hours "${{ inputs.deadline_hours || '72' }}" \
+          python shadow/shadow_run.py --deadline-hours "$DEADLINE" \
             --state-dir shadow-crypto \
             --symbols BTC-USD ETH-USD SOL-USD \
             --feature price_vs_sma50 \
@@ -92,7 +107,9 @@ jobs:
         run: |
           cd quantedge
           FINALIZED=$(python3 -c "import json; print(json.load(open('shadow-crypto/state.json')).get('finalized'))" 2>/dev/null || echo None)
-          DEADLINE=$(python3 -c "import json; print(json.load(open('shadow-crypto/state.json')).get('deadline_hours', 72))" 2>/dev/null || echo 72)
+          # INT compare — the previous string compare of a 72.0 float
+          # against "72" misfired and killed the chain on 2026-11-27.
+          DEADLINE=$(python3 -c "import json; print(int(json.load(open('shadow-crypto/state.json')).get('deadline_hours', 72)))" 2>/dev/null || echo 72)
           INPUTS='{}'
           if [ "$FINALIZED" = "True" ]; then
             if [ "$DEADLINE" = "72" ]; then

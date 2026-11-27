@@ -138,6 +138,14 @@ def tick(state: dict, cfg, state_path: str, journal_path: str, now) -> dict:
         if signal is None:
             continue
         last_bar = state["signals"].get(symbol, {}).get("bar_time")
+        # Always refresh the recorded signal first: it is the mark-to-market
+        # source for open positions. Trade actions below still require a NEW
+        # completed bar.
+        state["signals"][symbol] = {
+            "direction": signal["direction"],
+            "price": signal["price"],
+            "bar_time": signal["bar_time"],
+        }
         if last_bar == signal["bar_time"]:
             continue  # no completed new bar since last tick
 
@@ -176,11 +184,18 @@ def tick(state: dict, cfg, state_path: str, journal_path: str, now) -> dict:
                     "ts": _now().isoformat(),
                 })
 
-        state["signals"][symbol] = {
-            "direction": signal["direction"],
-            "price": signal["price"],
-            "bar_time": signal["bar_time"],
-        }
+    # Mark open positions to market (last completed bar prices). Realized
+    # equity (state["equity"]) is intentionally UNTOUCHED — closes are the
+    # only thing that moves it; marked_equity is reporting-only.
+    unrealized = 0.0
+    for symbol, position in state.get("positions", {}).items():
+        sig = state.get("signals", {}).get(symbol)
+        if sig is None or position.get("entry_price") is None:
+            continue
+        unrealized += (sig["price"] - position["entry_price"]) \
+            * position["units"] * position["direction"]
+    state["unrealized"] = round(unrealized, 2)
+    state["marked_equity"] = round(state["equity"] + unrealized, 2)
     return state
 
 
