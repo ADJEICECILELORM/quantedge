@@ -29,18 +29,18 @@
   "signals": {
     "BTC-USD": {
       "direction": -1,
-      "price": 60494.7109375,
-      "bar_time": "2026-11-26 00:00:00"
+      "price": 59781.578125,
+      "bar_time": "2026-11-27 00:00:00"
     },
     "ETH-USD": {
       "direction": -1,
-      "price": 1687.7418212890625,
-      "bar_time": "2026-11-26 00:00:00"
+      "price": 1658.27001953125,
+      "bar_time": "2026-11-27 00:00:00"
     },
     "SOL-USD": {
       "direction": -1,
-      "price": 70.9327621459961,
-      "bar_time": "2026-11-26 00:00:00"
+      "price": 71.62999725341797,
+      "bar_time": "2026-11-27 00:00:00"
     }
   },
   "finalized": false,
@@ -50,6 +50,6 @@
     "SOL-USD"
   ],
   "feature": "price_vs_sma50",
-  "unrealized": -8.52,
-  "marked_equity": 9991.48
+  "unrealized": 40.98,
+  "marked_equity": 10040.98
 }
