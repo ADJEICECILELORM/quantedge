@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.17 - 2026-11
+
+- **Gate 2, crypto chain: PASS — and profitable.** The 72h crypto shadow
+  (BTC/ETH/SOL vol-scaled momentum, started 2026-11-24T17:02Z) finalized at
+  2026-11-27T18:01Z. Graded against the SHADOW_EXPECTATIONS.md
+  pre-registration: finalized=true; n_trades 3 (<= 5); pnl **+$78.67
+  (+0.79%, >= -1000)**; equity_discrepancy **-$0.00 (<= 1.00)** - journal
+  and equity reconcile exactly, the strongest integrity result. Per-symbol:
+  BTC +$28.11, ETH +$22.75, SOL +$27.81 (all three shorts won). 100% win
+  rate on n=3 is noise, NOT a claim - the registration grades operability,
+  and 3 days never proves profitability. This is the deployable candidate
+  clearing its operability gate.
+- **Bug found + fixed: the 30d auto-respawn silently failed.** The
+  bootstrap step compared deadline_hours as a STRING: state stores 72.0
+  (float), the check wanted "72" - mismatch - the step concluded the 30d
+  longrun had already finished, printed "chain stops", and the disable
+  step switched the workflow off. The 72h run was never archived. Fix:
+  int() compare + robust deadline resolution (dispatch input > state
+  file > 720 default when no state exists); 72h run manually archived to
+  shadow-crypto/archive/20261127T180105Z/; MTM code synced into the state
+  branch (safe post-finalize); workflow fix pushed to both main and the
+  state branch (cron uses the default-branch copy). Longrun armed via the
+  push-triggered tick.
+
 ## 2.16 - 2026-11
 
 - **Gate 2, FX chain: PASS.** The 72h FX shadow (EURUSD/GBPUSD/USDJPY,
