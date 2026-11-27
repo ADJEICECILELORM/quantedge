@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.16 - 2026-11
+
+- **Gate 2, FX chain: PASS.** The 72h FX shadow (EURUSD/GBPUSD/USDJPY,
+  started 2026-11-24T12:13Z) finalized at 2026-11-27T13:01Z. Graded with
+  `compare_report.py` against the SHADOW_EXPECTATIONS.md pre-registration:
+  finalized=true; n_trades 6 (<= 30); pnl -$125.70 (-1.26%, >= -1200);
+  equity_discrepancy -$5.60 (<= 30). Exit 0. Per-symbol: USDJPY +$38.42,
+  EURUSD -$0.04, GBPUSD -$158.48. Win rate 50%, PF 0.44 - NOT graded, as
+  pre-registered (n too small). Verdict per the registration: operability
+  evidence only; FX was never a deployability candidate (PSR 0.869 < 0.95
+  in the 15-year validation). Chain ends here by design - no respawn.
+- Pre-registered 30d crypto longrun thresholds (SHADOW_EXPECTATIONS.md,
+  "Chain 2L") BEFORE the longrun respawn: trades 0-15 (expected ~3.5),
+  pnl >= -$1,500 (matched to backtest maxDD 15.5%), equity discrepancy
+  <= $1.00, marked_equity >= -$1,500. Committed at 10:30 UTC, ~7.5h before
+  the respawn.
+
 ## 2.15 - 2026-11
 
 - Shadow runner: mark-to-market for open positions. `state["unrealized"]`
